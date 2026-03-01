@@ -1,0 +1,471 @@
+\documentclass[10pt,landscape]{article}
+\usepackage{amsmath, amssymb, geometry, graphicx}
+\geometry{margin=0.25in}
+\usepackage{multicol}
+\usepackage{titlesec}
+\usepackage{enumitem}
+
+% ----- 极致紧凑排版设置 -----
+% 压缩标题间距并调整样式
+\titleformat{\section}{\normalsize\bfseries\uppercase}{\thesection}{1em}{}[\titlerule]
+\titleformat{\subsection}{\small\bfseries}{\thesubsection}{1em}{}
+\titlespacing*{\section}{0pt}{1ex plus 0.2ex minus 0.1ex}{0.5ex plus 0.1ex}
+\titlespacing*{\subsection}{0pt}{0.8ex plus 0.2ex minus 0.1ex}{0.3ex plus 0.1ex}
+
+% 压缩列表间距
+\setlist{nosep, leftmargin=1.2em, topsep=0pt, partopsep=0pt, parsep=0pt, itemsep=0.2ex}
+
+% 允许公式跨页打断
+\allowdisplaybreaks
+
+\begin{document}
+\scriptsize % 全局使用极小字体以容纳所有原始文本
+\begin{multicols*}{3} % 开启三栏
+
+% 压缩公式上下的留白
+\setlength{\abovedisplayskip}{2pt}
+\setlength{\belowdisplayskip}{2pt}
+\setlength{\abovedisplayshortskip}{1pt}
+\setlength{\belowdisplayshortskip}{1pt}
+
+\section*{Machine Learning Optimization: Cheat Sheet}
+
+\subsection*{1. Unconstrained Optimization (Local Min/Max)}
+\textbf{Step 1: Critical Points} \\
+Find $x$ such that $\nabla f(x) = 0$.
+
+\textbf{Step 2: Hessian Matrix ($2 \times 2$)}
+$$ H = \begin{bmatrix} \frac{\partial^2 f}{\partial x_1^2} & \frac{\partial^2 f}{\partial x_1 \partial x_2} \\ \frac{\partial^2 f}{\partial x_2 \partial x_1} & \frac{\partial^2 f}{\partial x_2^2} \end{bmatrix} $$
+\begin{itemize}
+    \item \textbf{Local Minimum (Positive Definite):} $\det(H) > 0$ and $\text{Tr}(H) > 0$ (or $H_{11} > 0$).
+    \item \textbf{Local Maximum (Negative Definite):} $\det(H) > 0$ and $\text{Tr}(H) < 0$ (or $H_{11} < 0$).
+    \item \textbf{Saddle Point (Indefinite):} $\det(H) < 0$.
+\end{itemize}
+
+\subsection*{2. Constrained Optimization (Lagrange Multipliers)}
+\textbf{Goal:} Minimize $f(x)$ subject to $g(x) = c$. \\
+\textbf{Lagrangian:} $\mathcal{L}(x, \lambda) = f(x) + \lambda (g(x) - c)$ \\
+\textbf{First-order conditions:} $\nabla f(x) + \lambda \nabla g(x) = 0$ and $g(x) = c$. \\
+\textbf{Geometric Interpretation:} At the optimum, the level set of $f$ is tangent to the constraint surface. $\nabla f$ is parallel to $\nabla g$.
+
+\subsection*{3. Multivariable Extension (Sylvester's Criterion)}
+For a $3 \times 3$ Hessian $H$, compute leading principal minors: $\Delta_1 = H_{11}$, $\Delta_2 = \det(H_{1:2, 1:2})$, $\Delta_3 = \det(H)$.
+\begin{itemize}
+    \item \textbf{Positive Definite (Local Min):} $\Delta_1 > 0, \Delta_2 > 0, \Delta_3 > 0$.
+    \item \textbf{Negative Definite (Local Max):} $\Delta_1 < 0, \Delta_2 > 0, \Delta_3 < 0$.
+\end{itemize}
+
+\subsection*{4. OLS Global Minimum Proof \& Matrix Calculus}
+
+\textbf{Essential Matrix Calculus Rules (w.r.t vector $\beta$):}
+\begin{itemize}
+    \item \textbf{Linear Form:} $\frac{\partial}{\partial \beta} (c^T \beta) = \frac{\partial}{\partial \beta} (\beta^T c) = c$
+    \item \textbf{Quadratic Form:} $\frac{\partial}{\partial \beta} (\beta^T A \beta) = (A + A^T)\beta$. \\
+    \textit{Special Case:} If $A$ is symmetric (e.g., $A = X^TX$), then $\frac{\partial}{\partial \beta} (\beta^T A \beta) = 2A\beta$.
+    \item \textbf{Hessian of Quadratic:} $\nabla^2_\beta (\beta^T A \beta) = A + A^T$. \\
+    \textit{Special Case:} If $A$ is symmetric, then $\nabla^2_\beta = 2A$.
+\end{itemize}
+
+\textbf{Objective Function (OLS Loss):}
+$$f(\beta) = \|y - X\beta\|^2 = (y - X\beta)^T(y - X\beta)$$
+
+\textbf{Step 1: Expand and Find Critical Point} \\
+Expand the inner product:
+$$f(\beta) = y^Ty - y^TX\beta - \beta^TX^Ty + \beta^TX^TX\beta$$
+Since $y^TX\beta$ is a scalar (a $1 \times 1$ matrix), it equals its transpose: $(y^TX\beta)^T = \beta^TX^Ty$. Thus, we can combine the middle terms:
+$$f(\beta) = y^Ty - 2\beta^TX^Ty + \beta^TX^TX\beta$$
+Now, apply the calculus rules to take the gradient w.r.t $\beta$. Let $c = X^Ty$ and the symmetric matrix $A = X^TX$:
+$$\nabla f(\beta) = 0 - 2X^Ty + 2X^TX\beta$$
+Set the gradient to 0 to find the critical point:
+$$2X^TX\beta - 2X^Ty = 0 \implies \hat{\beta} = (X^TX)^{-1}X^Ty$$
+
+\textbf{Step 2: Compute the Hessian Matrix} \\
+Take the derivative of the gradient $\nabla f(\beta)$ w.r.t $\beta$:
+$$H = \nabla^2 f(\beta) = \frac{\partial}{\partial \beta} (-2X^Ty + 2X^TX\beta) = 2X^TX$$
+\textit{(Notice $H$ is constant and independent of $\beta$, defining the curvature everywhere.)}
+
+\textbf{Step 3: Prove Positive Semi-Definite (PSD) for Global Convexity} \\
+By definition, a matrix $H$ is PSD if $v^T H v \ge 0$ for any vector $v$. Let's test our Hessian:
+$$v^T H v = v^T (2X^TX) v = 2(Xv)^T(Xv) = 2\|Xv\|^2$$
+Since the squared norm of any real vector is non-negative ($\|Xv\|^2 \ge 0$), it is guaranteed that $v^T H v \ge 0$ for all $v$. \\
+
+\textbf{Final Conclusion:} \\
+Since the Hessian $H = 2X^TX$ is positive semi-definite everywhere, the objective function $f(\beta)$ is globally convex. Therefore, the critical point $\hat{\beta} = (X^TX)^{-1}X^Ty$ is strictly the \textbf{global minimum}.
+
+\subsection*{5. Bias-Variance Decomposition (Multivariate)}
+\textbf{Model:} $y = f(x) + \epsilon$, where $E[\epsilon] = 0$ and $Cov(\epsilon) = \Sigma$. \\
+\textbf{Loss:} $l(y, \hat{f}(x)) = \|y - \hat{f}(x)\|^2$. \\
+\textbf{Goal:} Decompose $E[l(y, \hat{f}(x))]$.
+
+\textbf{Step 1: Expand and eliminate $\epsilon$ cross-terms} \\
+Let $d = f(x) - \hat{f}(x)$. The loss is $\|d + \epsilon\|^2 = (d+\epsilon)^T(d+\epsilon)$. \\
+$E[(d+\epsilon)^T(d+\epsilon)] = E[d^Td] + E[d^T\epsilon] + E[\epsilon^Td] + E[\epsilon^T\epsilon]$. \\
+Since $\epsilon$ is independent of $\hat{f}(x)$ and $E[\epsilon]=0$, the cross terms $E[d^T\epsilon] = 0$. \\
+The noise term $E[\epsilon^T\epsilon] = \text{tr}(\Sigma)$ (Irreducible Error).
+
+\textbf{Step 2: Add and subtract $E[\hat{f}(x)]$ inside $d$} \\
+$d = (f(x) - E[\hat{f}(x)]) + (E[\hat{f}(x)] - \hat{f}(x)) \equiv b + v$. \\
+Here, $b$ is a constant vector (Bias), and $E[v] = 0$. \\
+$E[d^Td] = E[(b+v)^T(b+v)] = E[b^Tb] + E[b^Tv] + E[v^Tb] + E[v^Tv]$. \\
+Cross terms are zero: $E[b^Tv] = b^TE[v] = 0$. \\
+$E[b^Tb] = \|f(x) - E[\hat{f}(x)]\|^2$ (Squared Bias).
+
+\textbf{Step 3: The Trace Trick for Variance} \\
+For the vector $v$, $v^Tv$ is a scalar, so $v^Tv = \text{tr}(v^Tv)$. By cyclic property, $\text{tr}(v^Tv) = \text{tr}(vv^T)$. \\
+$E[v^Tv] = E[\text{tr}(vv^T)] = \text{tr}(E[vv^T]) = \text{tr}(Cov(\hat{f}(x)))$ (Variance).
+
+\textbf{Final Equation \& Interpretation:} \\
+$$E[\|y - \hat{f}(x)\|^2] = \underbrace{\text{tr}(\Sigma)}_{\text{Noise}} + \underbrace{\|E[\hat{f}(x)] - f(x)\|^2}_{\text{Squared Bias}} + \underbrace{\text{tr}(Cov(\hat{f}(x)))}_{\text{Variance}}$$
+
+\begin{itemize}
+    \item \textbf{Irreducible Error ($\text{tr}(\Sigma)$):} The sum of the variances of each component of the noise vector. It comes from the inherent randomness in the data generation process and cannot be eliminated regardless of how good the model is.
+    \item \textbf{Squared Bias ($\|E[\hat{f}(x)] - f(x)\|^2$):} Quantifies the systematic error. It measures how much the average prediction of the model deviates from the true function.
+    \item \textbf{Variance ($\text{tr}(Cov(\hat{f}(x)))$):} Measures the instability of predictions. It shows how much the model's predictions would vary if trained on different data sets (high variance indicates over-sensitivity to the training data).
+\end{itemize}
+
+\subsection*{6. MLE with Constraints (Shifted Exponential)}
+\textbf{PDF:} $f(x; \lambda, \theta) = \lambda e^{-\lambda(x-\theta)}$ for $x \ge \theta$, $0$ otherwise. \\
+\textbf{Likelihood:} $L(\lambda, \theta) = \prod_{i=1}^N \lambda e^{-\lambda(x_i - \theta)}$ \\
+\textbf{Negative Log-Likelihood (NLL):}
+$$ \text{NLL}(\lambda, \theta) = -N \log \lambda + \lambda \sum_{i=1}^N (x_i - \theta) = -N \log \lambda + \lambda \sum_{i=1}^N x_i - \lambda N \theta $$
+
+\textbf{Part A: Failure of First-Order Condition for $\theta$} \\
+$\frac{\partial \text{NLL}}{\partial \theta} = -\lambda N = 0 \implies \lambda = 0$. \\
+This contradicts $\lambda > 0$. \textbf{Why?} The NLL is strictly decreasing with respect to $\theta$. There is no interior local minimum.
+
+\textbf{Part B: Constrained Solution for $\hat{\theta}$} \\
+To minimize NLL, we must make $\theta$ as large as possible. \\
+Constraint: $x_i \ge \theta$ for all $i \implies \theta \le \min(x_1, \dots, x_N)$. \\
+Therefore, the MLE for $\theta$ is:
+$$ \hat{\theta} = \min(x_1, x_2, \dots, x_N) $$
+
+\textbf{Part C: Standard FOC for $\hat{\lambda}$} \\
+$\frac{\partial \text{NLL}}{\partial \lambda} = -\frac{N}{\lambda} + \sum_{i=1}^N (x_i - \theta) = 0 \implies \lambda = \frac{N}{\sum_{i=1}^N (x_i - \theta)}$ \\
+Substitute $\hat{\theta}$:
+$$ \hat{\lambda} = \frac{N}{\sum_{i=1}^N (x_i - \hat{\theta})} $$
+
+\subsection*{7. Generalized Least Squares (GLS) Derivation}
+
+\textbf{Model Assumption:} $y = X\beta + \epsilon$, where $\epsilon \sim \mathcal{N}(0, \Sigma)$. \\
+Thus, the target variable follows a multivariate Gaussian: $y \sim \mathcal{N}(X\beta, \Sigma)$.
+
+\textbf{1. Deriving $\hat{\beta}^{GLS}$ via Maximum Likelihood (MLE)} \\
+The Negative Log-Likelihood (NLL) dropping constant terms is proportional to:
+$$ \text{NLL}(\beta) \propto \frac{1}{2}(y - X\beta)^T \Sigma^{-1} (y - X\beta) $$
+Expand the quadratic form (note that $y^T \Sigma^{-1} X\beta = \beta^T X^T \Sigma^{-1} y$ since it's a scalar):
+$$ (y - X\beta)^T \Sigma^{-1} (y - X\beta) = y^T \Sigma^{-1} y - 2\beta^T X^T \Sigma^{-1} y + \beta^T X^T \Sigma^{-1} X \beta $$
+Take the gradient w.r.t $\beta$ and set it to 0:
+$$ \nabla_\beta \text{NLL} = -X^T \Sigma^{-1} y + X^T \Sigma^{-1} X \beta = 0 $$
+Solve for the GLS estimator:
+$$ \hat{\beta}^{GLS} = (X^T \Sigma^{-1} X)^{-1} X^T \Sigma^{-1} y $$
+
+\textbf{2. Expected Value and Variance of $\hat{\beta}^{GLS}$} \\
+Substitute $y = X\beta + \epsilon$ into the estimator:
+$$ \hat{\beta}^{GLS} = (X^T \Sigma^{-1} X)^{-1} X^T \Sigma^{-1} (X\beta + \epsilon) = \beta + (X^T \Sigma^{-1} X)^{-1} X^T \Sigma^{-1} \epsilon $$
+\textbf{Expected Value (Unbiasedness):} Since $E[\epsilon] = 0$, 
+$$ E[\hat{\beta}^{GLS}] = \beta + 0 = \beta $$
+\textbf{Variance-Covariance Matrix:} Using $Var(Az) = A Var(z) A^T$ and $E[\epsilon \epsilon^T] = \Sigma$:
+\begin{align*}
+Var(\hat{\beta}^{GLS}) &= E[(\hat{\beta}^{GLS} - \beta)(\hat{\beta}^{GLS} - \beta)^T] \\
+&= (X^T \Sigma^{-1} X)^{-1} X^T \Sigma^{-1} E[\epsilon \epsilon^T] \Sigma^{-1} X (X^T \Sigma^{-1} X)^{-1} \\
+&= (X^T \Sigma^{-1} X)^{-1} X^T \Sigma^{-1} \Sigma \Sigma^{-1} X (X^T \Sigma^{-1} X)^{-1} \\
+&= (X^T \Sigma^{-1} X)^{-1} (X^T \Sigma^{-1} X) (X^T \Sigma^{-1} X)^{-1} \\
+&= (X^T \Sigma^{-1} X)^{-1}
+\end{align*}
+
+\textbf{3. Reduction to Ordinary Least Squares (OLS)} \\
+When errors are homogeneous ($Var(\epsilon_i) = \sigma^2$) and uncorrelated, the covariance matrix simplifies to $\Sigma = \sigma^2 I$. \\
+Substitute this into the GLS estimator:
+$$ \hat{\beta}^{GLS} = (X^T (\sigma^2 I)^{-1} X)^{-1} X^T (\sigma^2 I)^{-1} y = \left( \frac{1}{\sigma^2} X^T X \right)^{-1} \frac{1}{\sigma^2} X^T y $$
+Pull out the scalar $\sigma^2$:
+$$ \hat{\beta}^{GLS} = \sigma^2 (X^T X)^{-1} \frac{1}{\sigma^2} X^T y = (X^T X)^{-1} X^T y = \hat{\beta}^{OLS} $$
+\textit{Conclusion: GLS reduces to OLS under spherical errors.}
+
+\subsection*{8. The Essence of Maximum Likelihood Estimation (MLE)}
+
+\textbf{The 3-Step Universal Workflow for MLE in ML:}
+\begin{enumerate}
+    \item \textbf{Assume an Error Distribution:} Assign a probability distribution to the random noise/error $\epsilon$ (e.g., assuming $\epsilon \sim \mathcal{N}(0, \Sigma)$).
+    \item \textbf{Derive Target Distribution:} Determine the probability distribution of the target variable $y$ by combining the deterministic model $f(x)$ and the random error $\epsilon$ (e.g., $y \sim \mathcal{N}(f(x), \Sigma)$).
+    \item \textbf{Construct NLL:} Write the Probability Density/Mass Function (PDF/PMF) for $y$, take the product over all samples to get the Likelihood, apply the natural logarithm to convert products to sums (Log-Likelihood), and negate it to get the Negative Log-Likelihood (NLL). Minimize the NLL to solve for optimal parameters.
+\end{enumerate}
+
+\subsection*{9. Must-Know Probability Distributions}
+
+\textbf{1. Bernoulli Distribution} (Used in Binary Classification, e.g., Logistic Regression)\\
+Models a single binary outcome $y \in \{0, 1\}$ with probability of success $p$:
+$$ P(y; p) = p^y (1 - p)^{1-y} $$
+
+\textbf{2. Binomial Distribution} (Used for multiple independent binary trials)\\
+Models the number of successes $k$ in $n$ independent Bernoulli trials, with success probability $p$:
+$$ P(k; n, p) = \binom{n}{k} p^k (1 - p)^{n-k} = \frac{n!}{k!(n-k)!} p^k (1 - p)^{n-k} $$
+
+\textbf{3. Gaussian / Normal Distribution} (Used in Regression, e.g., OLS, GLS)\\
+\textit{Univariate (Scalar) $x \sim \mathcal{N}(\mu, \sigma^2)$:}
+$$ f(x; \mu, \sigma^2) = \frac{1}{\sqrt{2\pi\sigma^2}} \exp\left(-\frac{(x - \mu)^2}{2\sigma^2}\right) $$
+
+\textit{Multivariate (Vector) $\mathbf{x} \sim \mathcal{N}(\boldsymbol{\mu}, \Sigma)$ in $k$ dimensions:}
+$$ f(\mathbf{x}; \boldsymbol{\mu}, \Sigma) = \frac{1}{(2\pi)^{k/2} |\Sigma|^{1/2}} \exp\left(-\frac{1}{2}(\mathbf{x} - \boldsymbol{\mu})^T \Sigma^{-1} (\mathbf{x} - \boldsymbol{\mu})\right) $$
+
+
+\subsection*{11. Penalized Intercept: Ridge vs. Lasso}
+
+\textbf{1. Ridge Regression (L2 Penalty on Intercept)} \\
+\textbf{Objective:} $\min_{\beta_0, \beta} \|y - \beta_0 \mathbf{1} - X\beta\|^2 + \lambda(\beta_0^2 + \|\beta\|^2)$ \\
+Take the partial derivative w.r.t $\beta_0$:
+$$ \frac{\partial}{\partial \beta_0} = -2\mathbf{1}^T(y - \beta_0 \mathbf{1} - X\beta) + 2\lambda\beta_0 = 0 $$
+Since $\mathbf{1}^T \mathbf{1} = n$, solving for $\beta_0$ yields:
+$$ \hat{\beta}_0 = \frac{\mathbf{1}^T y - \mathbf{1}^T X \beta}{n + \lambda} $$
+\textit{Limiting Behavior:} As $\lambda \to 0$, $\hat{\beta}_0 \to \bar{y} - \bar{x}^T\hat{\beta}_{OLS}$. As $\lambda \to \infty$, $\hat{\beta}_0 \to 0$.
+
+\textbf{2. Lasso Regression (L1 Penalty on Intercept \& Subgradients)} \\
+\textbf{Objective:} $\min_{\beta_0, \beta} \|y - \beta_0 \mathbf{1} - X\beta\|^2 + \lambda(|\beta_0| + \|\beta\|_1)$ \\
+The subgradient of $\lambda|\beta_0|$ is $\lambda \cdot \text{sgn}(\beta_0)$. At $\beta_0 = 0$, $\text{sgn}(0) = s \in [-1, 1]$. \\
+The subgradient optimality condition for $\beta_0$:
+$$ -2\sum_{i=1}^n y_i + 2n\beta_0 + 2\sum_{j=1}^p \beta_j \sum_{i=1}^n x_{ij} + \lambda \cdot \text{sgn}(\beta_0) = 0 $$
+\textbf{Condition for exactly $\hat{\beta}_0 = 0$:} \\
+Set $\beta_0 = 0$ and substitute $s \in [-1, 1]$:
+$$ \lambda \cdot s = 2\sum_{i=1}^n y_i - 2\sum_{j=1}^p \hat{\beta}_j \sum_{i=1}^n x_{ij} $$
+Since $s \in [-1, 1]$, the absolute value of the right side must be bounded by $\lambda$:
+$$ \lambda \ge \left| 2\sum_{i=1}^n y_i - 2\sum_{j=1}^p \hat{\beta}_j \sum_{i=1}^n x_{ij} \right| $$
+\textit{Key Difference:} Ridge requires an exact equality to hit exactly zero (virtually impossible for finite $\lambda$), whereas the Lasso subgradient provides an interval, forcing parameters to exactly zero once $\lambda$ exceeds this threshold, thereby performing automatic variable selection.
+
+\textbf{3. Solving for $\hat{\beta}$ via Substitution (Algebraic Simplification)} \\
+Substitute $\beta_0$ into the $\beta$ equation:
+$$ (X^T X + \lambda I)\beta = X^T y - \left( \frac{\mathbf{1}^T y - \mathbf{1}^T X \beta}{n + \lambda} \right) X^T \mathbf{1} $$
+Let $a = X^T \mathbf{1}$ for simplicity. Note that $a^T = \mathbf{1}^T X$. The equation becomes:
+$$ (X^T X + \lambda I)\beta = X^T y - \frac{\mathbf{1}^T y - a^T \beta}{n + \lambda} a $$
+Multiply both sides by $(n + \lambda)$ to clear the denominator:
+$$ (n + \lambda)(X^T X + \lambda I)\beta = (n + \lambda)X^T y - (\mathbf{1}^T y)a + (a^T \beta)a $$
+\textit{Crucial Linear Algebra Trick:} Since $a^T \beta$ is a scalar, we can rearrange the vector multiplication: $(a^T \beta)a = a(a^T \beta) = (aa^T)\beta$. Here, $aa^T$ is an outer product matrix. \\
+Substitute this back and move all $\beta$ terms to the left:
+$$ (n + \lambda)(X^T X + \lambda I)\beta - (aa^T)\beta = (n + \lambda)X^T y - (\mathbf{1}^T y)a $$
+Factor out $\beta$ on the left side:
+$$ \left[ (n + \lambda)(X^T X + \lambda I) - aa^T \right]\beta = (n + \lambda)X^T y - (\mathbf{1}^T y)a $$
+Multiply by the inverse to obtain the final closed-form estimator for $\hat{\beta}$:
+$$ \hat{\beta} = \left[ (n + \lambda)(X^T X + \lambda I) - aa^T \right]^{-1} \left[ (n + \lambda)X^T y - (\mathbf{1}^T y)a \right] $$
+
+\subsection*{13. Lasso Regression: Subgradient \& Penalized Intercept}
+
+\textbf{Objective Function:}
+$$ \min_{\beta_0, \beta} \|y - \beta_0 \mathbf{1} - X\beta\|^2 + \lambda(|\beta_0| + \|\beta\|_1) $$
+
+\textbf{Step 1: The Subgradient of the L1 Penalty} \\
+The subgradient of $\lambda|\beta_0|$ with respect to $\beta_0$ is $\lambda \cdot \text{sgn}(\beta_0)$.
+Crucially, at the non-differentiable point $\beta_0 = 0$, the subgradient is a set: $\text{sgn}(0) = s \in [-1, 1]$.
+
+\textbf{Step 2: Subgradient Optimality Condition for $\beta_0$} \\
+Take the derivative of the squared loss and add the subgradient of the penalty:
+$$ -2\mathbf{1}^T(y - \beta_0 \mathbf{1} - X\beta) + \lambda \cdot \text{sgn}(\beta_0) = 0 $$
+Expanding the terms (using $\mathbf{1}^T \mathbf{1} = n$):
+$$ -2\sum_{i=1}^n y_i + 2n\beta_0 + 2\sum_{j=1}^p \beta_j \sum_{i=1}^n x_{ij} + \lambda \cdot \text{sgn}(\beta_0) = 0 $$
+
+\textbf{Step 3: Finding the Threshold for exactly $\hat{\beta}_0 = 0$} \\
+For $\hat{\beta}_0 = 0$ to be the optimal solution, 0 must satisfy the optimality condition. Substitute $\beta_0 = 0$ and $\text{sgn}(0) = s$:
+$$ -2\sum_{i=1}^n y_i + 0 + 2\sum_{j=1}^p \hat{\beta}_j \sum_{i=1}^n x_{ij} + \lambda \cdot s = 0 $$
+Rearranging to isolate $\lambda \cdot s$:
+$$ \lambda \cdot s = 2\sum_{i=1}^n y_i - 2\sum_{j=1}^p \hat{\beta}_j \sum_{i=1}^n x_{ij} $$
+Because $s$ is strictly bounded within $[-1, 1]$, the absolute value of the left side is at most $\lambda$. Therefore, the absolute value of the right side must be bounded by $\lambda$:
+$$ \lambda \ge \left| 2\sum_{i=1}^n y_i - 2\sum_{j=1}^p \hat{\beta}_j \sum_{i=1}^n x_{ij} \right| $$
+
+\textbf{Contrast with Ridge Regression:} \\
+In Ridge, the penalty derivative is $2\lambda\beta_0$. Setting $\beta_0=0$ makes this penalty term vanish completely. The optimality condition would require the data-dependent gradient to be exactly zero: $-2\sum y_i + 2\sum \hat{\beta}_j \sum x_{ij} = 0$. This exact equality is virtually impossible in practice. Lasso's subgradient creates an interval (a "catch zone"), forcibly shrinking the parameter to exactly zero once $\lambda$ is sufficiently large.
+
+
+\section{L1: Introduction}
+\textbf{Parametric vs. Non-parametric}
+\begin{itemize}
+    \item \textbf{Parametric:} Assumes functional form of $f$ (e.g., Linear). Reduces problem to estimating a smaller set of parameters.
+    \item \textbf{Non-parametric:} No functional form assumption. Can fit data arbitrarily closely but requires much more data to learn and ensure generalizability.
+\end{itemize}
+
+\textbf{Model Complexity \& Flexibility}
+\begin{itemize}
+    \item More complex/flexible models fit training data better (lower training loss).
+    \item \textit{Conceptual Trap:} Simpler models are often better for \textbf{inference} and interpretability (analyzing individual relationships), while complex models might be better for \textbf{prediction} but risk overfitting.
+\end{itemize}
+
+\textbf{Supervised vs. Unsupervised}
+\begin{itemize}
+    \item Supervised: Inputs $x$ paired with labels $y$. Task: Classification (discrete $y$), Regression (continuous $y$).
+    \item Unsupervised: Features $x$ only, no responses. Task: Clustering, finding low-dimensional latent factors (PCA). Cannot rely on visual inspection easily.
+\end{itemize}
+
+\section{L2: Optimization}
+\textbf{Global vs. Local Optima}
+\begin{itemize}
+    \item In \textbf{convex} optimization problems, all local minima are global minima.
+\end{itemize}
+
+\textbf{Optimality Conditions (Crucial for MCQs)}
+\begin{itemize}
+    \item \textbf{Necessary:} If $\theta^*$ is a local min, $g(\theta^*) = 0$ AND $H(\theta^*)$ is Positive Semi-Definite (PSD, eigenvalues $\ge 0$).
+    \item \textbf{Sufficient:} If $g(\theta^*) = 0$ AND $H(\theta^*)$ is Positive Definite (PD, eigenvalues $> 0$), then $\theta^*$ is a local min.
+    \item \textit{Conceptual Trap:} A PSD Hessian (with $g=0$) does \textbf{NOT} guarantee a local minimum (could be a saddle point or flat region).
+\end{itemize}
+
+\textbf{First vs. Second-Order Methods}
+\begin{itemize}
+    \item \textbf{Gradient Descent (1st):} Direction $d_t = -g_t$. Ignores curvature, can be slow.
+    \item \textbf{Momentum:} Moves along exponential moving average of past gradients. Helps prevent zig-zagging in flat regions.
+    \item \textbf{Newton's Method (2nd):} Uses inverse Hessian $H_t^{-1}$. Optimizes a quadratic fit. Optimal step size for purely quadratic functions is exactly $\eta=1$.
+\end{itemize}
+
+\textbf{Stochastic Gradient Descent (SGD)}
+\begin{itemize}
+    \item Uses an \textbf{unbiased estimate} of the gradient from a minibatch.
+    \item \textit{Why it works:} Noise in SGD actually helps models escape bad local optima and can improve generalizability.
+\end{itemize}
+
+\textbf{Constrained Optimization (Lagrangian)}
+\begin{itemize}
+    \item To minimize $f(\theta)$ s.t. $h_i(\theta) = 0$, construct Lagrangian: $L(\theta, \lambda) = f(\theta) - \sum \lambda_i h_i(\theta)$.
+    \item Constraint surfaces are tangent to the contour of $f$ at optimum: gradients must be parallel.
+\end{itemize}
+
+\section{L3: Statistical Foundations}
+\textbf{Expected Prediction Error}
+\begin{itemize}
+    \item Formula: $E[(y_0 - \hat{y}_0)^2] = \text{Bias}^2 + \text{Variance} + \sigma^2$
+    \item $\sigma^2$ is the \textbf{irreducible error} (variance of the random noise $\epsilon$). Even a perfect model cannot eliminate this.
+\end{itemize}
+
+\textbf{Bias-Variance Tradeoff}
+\begin{itemize}
+    \item \textbf{Bias:} Difference between expected prediction and true response.
+    \item \textbf{Variance:} How much the learned hypothesis varies with different training sets.
+    \item \textit{Conceptual Trap:} Higher complexity $\to$ Lower Bias, Higher Variance (Overfitting). Lower complexity $\to$ Higher Bias, Lower Variance (Underfitting). Test loss follows a U-shape.
+\end{itemize}
+
+\textbf{Bayes Classifier \& 0/1 Loss}
+\begin{itemize}
+    \item Predicts the class with the highest conditional probability: $\arg\max_y Pr(Y=y|x_0)$.
+    \item It mathematically minimizes the Bayes Risk. It is the \textbf{theoretical optimal} classifier.
+    \item \textit{Issue in practice:} We rarely know the true underlying distribution $Pr(Y|X)$.
+\end{itemize}
+
+\textbf{Maximum Likelihood Estimation (MLE)}
+\begin{itemize}
+    \item Assumes data is i.i.d. Maximizes joint likelihood: $\prod Pr(y_i | x_i, \theta)$.
+    \item Logarithm is strictly increasing, so maximizing log-likelihood is equivalent.
+    \item \textit{Conceptual Trap:} Minimizing the Negative Log Likelihood (NLL) is mathematically equivalent to MLE. NLL acts as the empirical risk loss function.
+\end{itemize}
+
+\section*{Lecture 4: K-Nearest Neighbors (K-NN)}
+\textbf{Core Concept:} Discriminative model (models decision boundary directly, not $P(X|Y)$).
+\begin{itemize}
+    \item \textbf{K=1 (Voronoi):} \textit{High Variance, Low Bias.} Highly flexible, fits noise. Training error is exactly 0.
+    \item \textbf{Large K:} \textit{Low Variance, High Bias.} Smoother decision boundary, less sensitive to noise.
+    \item \textbf{Curse of Dimensionality:} As dimensions ($D$) increase, neighborhood volume scales exponentially. The edge length of a bounding box needed to capture $K$ neighbors grows as $(K/n)^{1/D}$. Data becomes uniformly sparse; distance metrics lose meaning.
+\end{itemize}
+
+\subsection*{Cross-Validation (CV)}
+\begin{itemize}
+    \item \textbf{LOOCV (Leave-One-Out):} Low bias, but \textbf{High Variance} because the training sets are virtually identical (highly correlated). Efficient ONLY for K-NN because K-NN has no explicit training phase.
+    \item \textbf{k-Fold CV (k=5 or 10):} Better balance. Lower variance than LOOCV because training sets are more varied.
+\end{itemize}
+
+\section*{Lecture 5: Linear Regression}
+\textbf{Core Concept:} Minimizes Residual Sum of Squares (RSS). $\hat{\beta} = (X^\top X)^{-1}X^\top y$.
+\begin{itemize}
+    \item \textbf{Geometric View:} $\hat{y}$ is the orthogonal projection of $y$ onto the column space of $X$.
+    \item \textbf{Invertibility:} $X^\top X$ is NOT invertible if $p > N$ (wide matrix) or if features are perfectly collinear.
+    \item \textbf{Gauss-Markov Theorem:} OLS has the \textbf{lowest variance} among all linear, unbiased estimators (BLUE).
+    \item \textbf{Multiple vs. Simple:} Coefficients change wildly when adding variables if features are correlated.
+\end{itemize}
+
+\subsection*{Regression Statistics}
+\begin{itemize}
+    \item \textbf{$R^2$:} Proportion of variance explained ($1 - RSS/TSS$). Adding ANY variable (even random noise) will monotonically increase $R^2$.
+    \item \textbf{F-Statistic:} Tests if AT LEAST ONE predictor is useful. $F \approx 1$ implies features are just noise. $F \gg 1$ rejects the null hypothesis.
+    \item \textbf{t-Statistic:} Tests significance of an individual parameter ($\hat{\beta}_i / SE(\hat{\beta}_i)$).
+\end{itemize}
+
+\section*{Lecture 6: Shrinkage Methods (Regularization)}
+\textbf{Goal:} Deliberately introduce Bias to significantly reduce Variance, especially when $p$ is large.
+\begin{itemize}
+    \item \textbf{Mandatory Preprocessing:} You MUST center and standardize features (Z-score) before applying shrinkage, otherwise large-scale features are penalized unfairly. Do \textbf{not} penalize the intercept ($\beta_0$).
+\end{itemize}
+
+\subsection*{Ridge Regression ($L_2$ Penalty)}
+\begin{itemize}
+    \item Penalty: $\lambda \sum \beta_j^2$. 
+    \item Closed form: $\hat{\beta}^{ridge} = (X^\top X + \lambda I)^{-1}X^\top \tilde{y}$. Fixes the non-invertibility problem.
+    \item \textbf{Key MCQ Fact:} Ridge shrinks all coefficients proportionally but \textbf{never exactly to 0}. 
+    \item Best for \textbf{Dense Models}: Many features contributing moderately.
+\end{itemize}
+
+\subsection*{Lasso Regression ($L_1$ Penalty)}
+\begin{itemize}
+    \item Penalty: $\lambda \sum |\beta_j|$. No closed-form solution.
+    \item \textbf{Key MCQ Fact:} Lasso performs \textbf{Feature Selection}. It forces some coefficients to be EXACTLY 0.
+    \item \textbf{Geometric Reason:} The $L_1$ constraint region is a polytope (diamond shape). The RSS contour is highly likely to intersect the constraint at a corner (axis), meaning a coefficient becomes 0.
+    \item \textbf{Soft Thresholding:} Shifts OLS parameters toward 0 by a constant factor ($\lambda/2$). If magnitude is smaller than $\lambda/2$, it is zeroed out.
+    \item Best for \textbf{Sparse Models}: Only a few features have a strong influence.
+\end{itemize}
+
+\section{Lecture 7: Basis Expansions}
+\textbf{Polynomial Regression vs. Splines}
+\begin{itemize}
+    \item \textbf{Global Polynomials:} High degree ($d > 4$) leads to \textbf{high variance at domain boundaries}. Achieves opposite of shrinkage.
+    \item \textbf{Regression Splines:} Piecewise polynomials. Divides domain into bins using knots. Fits are often discontinuous unless constrained.
+    \item \textbf{Constraints:} Continuity ($K$ constraints) and smoothness (equal derivatives). For $n$th derivative constraint, DoF is $(d+1)(K+1) - (n+1)K$.
+\end{itemize}
+
+\textbf{Natural vs. Smoothing Splines}
+\begin{itemize}
+    \item \textbf{Natural Splines:} Forced to be \textbf{linear} beyond boundary knots ($x < \xi_1$ and $x \ge \xi_K$). Fixes boundary variance issue. Frees up 4 DoF.
+    \item \textbf{Smoothing Splines:} Knots placed at \textbf{every single data point} $x_i$. Controls complexity not by knots, but via a roughness penalty $\lambda \int f''(x)^2 dx$.
+    \item As $\lambda \to \infty$, fit becomes perfectly linear ($f'' = 0$). As $\lambda \to 0$, fit interpolates all points perfectly.
+    \item Smoothing spline is a \textbf{shrinking smoother} (analogous to Ridge Regression).
+\end{itemize}
+
+\section{Lecture 8: Kernel Smoothers}
+\textbf{Bias-Variance Tradeoff}
+\begin{itemize}
+    \item \textbf{Kernel Width ($h$ or $\lambda$):} 
+    \item Smaller width $\to$ smaller neighborhood $\to$ \textbf{Lower Bias, Higher Variance}.
+    \item Larger width $\to$ more averaging $\to$ \textbf{Higher Bias, Lower Variance}.
+\end{itemize}
+
+\textbf{Boundary Behavior (CRITICAL)}
+\begin{itemize}
+    \item \textbf{Nadaraya-Watson (Constant Fit):} Exhibits \textbf{high bias at boundaries} due to kernel asymmetry (missing data on one side).
+    \item \textbf{Local Linear Regression:} Perfectly \textbf{fixes boundary bias} by fitting a linear model locally. Corrects for kernel asymmetry.
+    \item \textbf{Local Polynomial (Quadratic):} Reduces bias in high curvature regions but \textbf{increases variance} (especially at boundaries).
+\end{itemize}
+
+\textbf{Memory-based vs. Parametric}
+\begin{itemize}
+    \item Local Regression / K-NN are \textbf{memory-based}. No training needed, but memory-intensive during inference. Requires separate regression for each query point.
+    \item \textbf{Radial Basis Functions (RBF):} \textbf{Parametric}. Learns fixed centers $\xi_j$, widths $\lambda_j$, and weights $\beta_j$. Global basis expansion acting regionally.
+\end{itemize}
+
+\textbf{Curse of Dimensionality}
+\begin{itemize}
+    \item Kernel smoothers fail in high-D (bias increases, variance decreases unless data grows exponentially).
+    \item \textbf{Additive Models} solve this by assuming \textbf{no interaction} between features: $f(x) = \beta_0 + \sum f_j(x^{(j)})$. Solved iteratively via Backfitting.
+\end{itemize}
+
+\section{Lecture 9: Model Selection}
+\textbf{Optimism and DoF}
+\begin{itemize}
+    \item Training error $\overline{err}$ typically \textbf{underestimates} true prediction error $Err_{\mathcal{T}}$.
+    \item \textbf{Optimism ($\omega$):} $\omega = E[Err_{in} - \overline{err}] = \frac{2}{N} \sum Cov(\hat{y}_i, y_i)$. Larger covariance $\to$ larger optimism $\to$ higher risk of overfitting.
+    \item \textbf{Effective DoF ($df$):} $df = tr(H)$ where $\hat{y} = Hy$.
+    \item \textbf{OLS:} $df = p$ (number of predictors).
+    \item \textbf{Ridge:} $df = \sum \frac{d_j}{d_j + \lambda}$. Gives \textbf{fractional} DoF.
+\end{itemize}
+
+\textbf{Information Criteria (AIC, BIC, $C_p$)}
+\begin{itemize}
+    \item All metrics estimate prediction error by applying a penalty/correction to training error. Prefer the model with the \textbf{SMALLEST} value.
+    \item \textbf{$C_p$ Statistic:} Based on RSS. Adds $\frac{2p}{N}\hat{\sigma}^2$ to correct optimism.
+    \item \textbf{AIC:} $AIC = 2(NLL + p)$. Based on Negative Log Likelihood.
+    \item \textbf{BIC:} $BIC = 2 \cdot NLL + p \log N$. 
+    \item \textbf{AIC vs BIC:} Because $\log N > 2$ for any $N > 7$, \textbf{BIC penalizes complexity more heavily} than AIC. BIC tends to select \textbf{simpler} models than AIC.
+    \item BIC can also estimate posterior probabilities: $Pr(M_k|y) \propto \exp(-BIC_k/2)$.
+\end{itemize}
+
+\end{multicols*}
+\end{document}
