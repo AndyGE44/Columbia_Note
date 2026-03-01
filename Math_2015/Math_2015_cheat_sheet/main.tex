@@ -1,0 +1,220 @@
+
+\documentclass[10pt, letterpaper]{article}
+\usepackage[margin=0.3in]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{multicol}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{fancyhdr}
+\usepackage[most]{tcolorbox}
+
+% Formatting setup
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{2pt}
+\setlist[itemize]{leftmargin=*, nosep}
+\setlist[enumerate]{leftmargin=*, nosep}
+\titlespacing*{\section}{0pt}{4pt}{2pt}
+\titlespacing*{\subsection}{0pt}{3pt}{1pt}
+
+% Custom Boxes for Formalism
+\newtcolorbox{theorbox}[1]{
+    colback=gray!5, 
+    colframe=black, 
+    fonttitle=\bfseries\small, 
+    title=Theorem: #1, 
+    left=2pt, right=2pt, top=2pt, bottom=2pt,
+    boxrule=0.8pt
+}
+
+\newtcolorbox{defbox}[1]{
+    colback=white, 
+    colframe=blue!40!black, 
+    fonttitle=\bfseries\small, 
+    title=Definition: #1, 
+    left=2pt, right=2pt, top=2pt, bottom=2pt,
+    boxrule=0.8pt,
+    arc=0pt
+}
+
+% Header configuration
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\textbf{Linear Algebra \& Probability Final Exam}}
+\rhead{Columbia Fall 2025 - Study Cheat Sheet}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\begin{document}
+\small
+\begin{multicols*}{2}
+
+% =================================================================
+% SECTION: LINEAR ALGEBRA
+% =================================================================
+\section{Linear Algebra (Theory \& Algorithms)}
+
+\subsection{Vector Spaces \& Subspaces}
+\begin{defbox}{Vector Space \& Subspace}
+A subset $W$ of a vector space $V$ is a \textbf{subspace} if:
+\begin{enumerate}
+    \item The zero vector $\mathbf{0} \in W$.
+    \item \textbf{Closure under Addition:} $\forall u, v \in W, u+v \in W$.
+    \item \textbf{Closure under Scalar Mult:} $\forall u \in W, c \in \mathbb{R}, cu \in W$.
+\end{enumerate}
+\end{defbox}
+
+\textbf{Basis:} A set of vectors $\mathcal{B} = \{v_1, \dots, v_n\}$ is a basis for $V$ if they are \textit{linearly independent} and $\text{Span}(\mathcal{B}) = V$.
+\\
+\textbf{Dimension:} $\dim(V)$ is the cardinality of any basis of $V$.
+
+\subsection{Linear Maps, Image, \& Kernel}
+Let $T: V \to W$ be a linear transformation ($T(x) = Ax$).
+\begin{itemize}
+    \item \textbf{Kernel (Null Space):} $\text{Ker}(T) = \{x \in V \mid T(x) = 0\}$.
+    \item \textbf{Image (Col Space):} $\text{Im}(T) = \{w \in W \mid \exists x \in V, T(x) = w\}$.
+\end{itemize}
+
+\begin{theorbox}{Rank-Nullity Theorem}
+For a linear transformation $T: V \to W$:
+$$ \dim(V) = \dim(\text{Ker}(T)) + \dim(\text{Im}(T)) $$
+In matrix terms for $A \in \mathbb{R}^{m \times n}$:
+$$ n = (\text{\# Free Variables}) + (\text{\# Pivot Columns}) $$
+\end{theorbox}
+
+\subsection{Orthogonal Diagonalization}
+\textit{Required: Matrix must be Symmetric ($A=A^T$).}
+
+\begin{theorbox}{Spectral Theorem}
+If $A$ is a symmetric matrix, then $A$ is orthogonally diagonalizable. There exists an orthogonal matrix $P$ (where $P^T = P^{-1}$) and a diagonal matrix $D$ such that:
+$$ A = PDP^T $$
+\end{theorbox}
+
+\textbf{Algorithm:}
+\begin{enumerate}
+    \item \textbf{Eigenvalues:} Solve $\det(A - \lambda I) = 0$.
+    \item \textbf{Eigenspaces:} Find basis for $\text{Nul}(A - \lambda I)$.
+    \item \textbf{Gram-Schmidt:} If $\lambda$ has multiplicity $k > 1$, ensure orthogonality within the eigenspace:
+    $$ u_k = v_k - \sum_{j=1}^{k-1} \text{proj}_{u_j}(v_k) $$
+    \item \textbf{Normalize:} $e_i = \frac{u_i}{||u_i||}$. Form $P = [e_1 \dots e_n]$.
+\end{enumerate}
+
+\subsection{Singular Value Decomposition (SVD)}
+\begin{theorbox}{SVD Existence Theorem}
+Let $A$ be an $m \times n$ matrix with rank $r$. Then there exists an $m \times n$ factorization:
+$$ A = U \Sigma V^T $$
+\begin{itemize}
+    \item $U$: $m \times m$ orthogonal matrix (Left Singular Vectors).
+    \item $\Sigma$: $m \times n$ diagonal matrix with singular values $\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_r > 0$.
+    \item $V$: $n \times n$ orthogonal matrix (Right Singular Vectors).
+\end{itemize}
+\end{theorbox}
+
+\textbf{Construction:}
+\begin{enumerate}
+    \item \textbf{$\Sigma$ (Singular Values):} $\sigma_i = \sqrt{\lambda_i(A^T A)}$.
+    \item \textbf{$V$ (Right Vectors):} Normalized eigenvectors of $A^T A$.
+    \item \textbf{$U$ (Left Vectors):} For $i \le r$, $u_i = \frac{1}{\sigma_i} A v_i$.
+    \item \textbf{Extension:} If $r < m$, find remaining $u_i$ via Gram-Schmidt on $\text{Nul}(A^T)$ or orthogonal complement.
+\end{enumerate}
+
+% =================================================================
+% SECTION: PROBABILITY
+% =================================================================
+\section{Probability (Theory \& Definitions)}
+
+\subsection{Fundamental Definitions (PDF, CDF, PMF)}
+\begin{defbox}{Cumulative Distribution Function (CDF)}
+The CDF of a random variable $X$, denoted $F_X(x)$, is defined as:
+$$ F_X(x) = P(X \leq x) $$
+\textbf{Properties:}
+\begin{itemize}
+    \item Monotonically non-decreasing.
+    \item $\lim_{x \to -\infty} F_X(x) = 0$ and $\lim_{x \to \infty} F_X(x) = 1$.
+    \item Right-continuous.
+\end{itemize}
+\end{defbox}
+
+\begin{defbox}{Probability Density Function (PDF)}
+For a continuous RV $X$, the PDF $f_X(x)$ satisfies:
+$$ P(a \leq X \leq b) = \int_{a}^{b} f_X(x) \, dx $$
+\textbf{Properties:}
+\begin{itemize}
+    \item $f_X(x) \geq 0$ for all $x$.
+    \item $\int_{-\infty}^{\infty} f_X(x) \, dx = 1$.
+    \item Relationship to CDF: $f_X(x) = \frac{d}{dx}F_X(x)$ (where differentiable).
+\end{itemize}
+\end{defbox}
+
+\begin{defbox}{Probability Mass Function (PMF)}
+For a discrete RV $X$, the PMF $p_X(x)$ is:
+$$ p_X(x) = P(X = x) $$
+Must satisfy: $\sum_x p_X(x) = 1$.
+\end{defbox}
+
+\subsection{Conditional Probability \& Bayes}
+\begin{theorbox}{Bayes' Theorem}
+Let $A$ and $B$ be events with $P(A)>0, P(B)>0$:
+$$ P(B|A) = \frac{P(A|B)P(B)}{P(A)} $$
+Using Law of Total Probability for denominator:
+$$ P(B_k|A) = \frac{P(A|B_k)P(B_k)}{\sum_{i} P(A|B_i)P(B_i)} $$
+\end{theorbox}
+
+\subsection{Limit Theorems}
+\begin{theorbox}{Law of Large Numbers (LLN)}
+Let $X_1, \dots, X_n$ be i.i.d. with $E[X_i] = \mu$. As $n \to \infty$:
+$$ \bar{X}_n = \frac{1}{n} \sum_{i=1}^{n} X_i \xrightarrow{P} \mu $$
+\end{theorbox}
+
+\begin{theorbox}{Central Limit Theorem (CLT)}
+Let $X_1, \dots, X_n$ be i.i.d. with mean $\mu$ and variance $\sigma^2 < \infty$. As $n \to \infty$:
+$$ \frac{\bar{X}_n - \mu}{\sigma / \sqrt{n}} \xrightarrow{d} N(0, 1) $$
+Sum formulation: $S_n \approx N(n\mu, n\sigma^2)$.
+\end{theorbox}
+
+\subsection{Moment Generating Functions (MGF)}
+\textbf{Definition:} $M_X(t) = E[e^{tX}]$.
+\textbf{Properties:}
+\begin{itemize}
+    \item $M_X(0) = 1$.
+    \item $E[X^n] = M_X^{(n)}(0)$ ($n$-th derivative at 0).
+    \item If $X, Y$ independent: $M_{X+Y}(t) = M_X(t)M_Y(t)$.
+\end{itemize}
+
+\section{Common Distributions}
+
+\subsection{Discrete}
+\textbf{Bernoulli($p$):} $P(X=1)=p$. $\mu=p, \sigma^2=p(1-p)$.
+\\
+\textbf{Binomial($n, p$):} $P(X=k) = \binom{n}{k} p^k (1-p)^{n-k}$.
+\\ $\mu=np, \sigma^2=np(1-p)$.
+\\
+\textbf{Poisson($\lambda$):} $P(X=k) = e^{-\lambda} \frac{\lambda^k}{k!}$.
+\\ $\mu=\lambda, \sigma^2=\lambda$. MGF: $e^{\lambda(e^t - 1)}$.
+\\
+\textbf{Geometric($p$):} $P(X=k) = (1-p)^{k-1}p$ (trials).
+\\ $\mu=1/p, \sigma^2=(1-p)/p^2$.
+
+\subsection{Continuous}
+\textbf{Uniform($a, b$):} $f(x) = \frac{1}{b-a}$. $\mu=\frac{a+b}{2}$.
+\\
+\textbf{Exponential($\lambda$):} $f(x) = \lambda e^{-\lambda x}$ ($x \ge 0$).
+\\ $F(x) = 1 - e^{-\lambda x}$. $\mu=1/\lambda, \sigma^2=1/\lambda^2$.
+\\
+\textbf{Normal($\mu, \sigma^2$):}
+\\ $f(x) = \frac{1}{\sqrt{2\pi}\sigma} e^{-\frac{(x-\mu)^2}{2\sigma^2}}$. MGF: $e^{\mu t + \frac{1}{2}\sigma^2 t^2}$.
+
+\subsection{Joint Distributions \& Covariance}
+\begin{defbox}{Covariance \& Correlation}
+$$ Cov(X,Y) = E[(X-\mu_X)(Y-\mu_Y)] = E[XY] - E[X]E[Y] $$
+$$ \rho_{XY} = \frac{Cov(X,Y)}{\sigma_X \sigma_Y}, \quad -1 \le \rho \le 1 $$
+\end{defbox}
+\textbf{Variance of Sum:}
+$Var(X+Y) = Var(X) + Var(Y) + 2Cov(X,Y)$.
+
+\section{Mock Exam Strategy Snippets}
+\textbf{Ex 3 (Density Constant):} To find $c$ in PDF, solve $\int_{-\infty}^{\infty} f(x)dx = 1$.
+\\
+\textbf{Ex 4 (Interval Prob):} $P(a \le X \le b) = F(b) - F(a)$ (continuous) or sum PMFs (discrete).
+
+\end{multicols*}
+\end{document}

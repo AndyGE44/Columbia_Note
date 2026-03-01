@@ -1,0 +1,223 @@
+\documentclass[10pt, letterpaper]{article}
+\usepackage[margin=0.5in]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{multicol}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{fancyhdr}
+\usepackage{xcolor}
+
+% Formatting setup
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+\setlist[itemize]{leftmargin=*, nosep}
+\setlist[enumerate]{leftmargin=*, nosep}
+\titlespacing*{\section}{0pt}{4pt}{2pt}
+\titlespacing*{\subsection}{0pt}{4pt}{2pt}
+
+% Header configuration
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\textbf{Linear Algebra \& Probability Final Exam}}
+\rhead{Columbia Fall 2025 - Study Cheat Sheet}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\begin{document}
+\small
+\begin{multicols*}{2}
+
+% =================================================================
+% SECTION: LINEAR ALGEBRA
+% =================================================================
+\section{Linear Algebra (Theory \& Algorithms)}
+
+\subsection{Vector Spaces \& Subspaces}
+\textbf{Vector Space axioms:} Closure under addition and scalar multiplication, associativity, commutativity, identity, inverses, distributive laws.
+\textbf{Subspace Test:} A subset $W$ of a vector space $V$ is a subspace if:
+1. The zero vector $\mathbf{0} \in W$.
+2. For all $u, v \in W$, $u+v \in W$ (Closed under addition).
+3. For all $u \in W, c \in \mathbb{R}$, $cu \in W$ (Closed under scalar mult).
+
+\textbf{Basis:} A set of vectors $\mathcal{B} = \{v_1, \dots, v_n\}$ is a basis for $V$ if:
+\begin{itemize}
+    \item They correspond to linearly independent vectors.
+    \item Their span covers $V$ ($\text{Span}(\mathcal{B}) = V$).
+\end{itemize}
+\textbf{Dimension:} The number of vectors in any basis of $V$.
+
+\subsection{Linear Maps, Image, \& Kernel}
+Let $T: V \to W$ be a linear transformation ($T(x) = Ax$).
+\begin{itemize}
+    \item \textbf{Kernel (Null Space):} $\text{Ker}(T) = \{x \in V \mid T(x) = 0\}$.
+    \item \textbf{Image (Range/Col Space):} $\text{Im}(T) = \{w \in W \mid \exists x \in V, T(x) = w\}$.
+    \item \textbf{Rank:} $\text{dim}(\text{Im}(T))$.
+    \item \textbf{Rank-Nullity Theorem:} 
+    $$ \dim(V) = \dim(\text{Ker}(T)) + \dim(\text{Im}(T)) $$
+    $$ (\text{\# Cols}) = (\text{\# Free Vars}) + (\text{\# Pivot Cols}) $$
+\end{itemize}
+
+\subsection{Orthogonal Diagonalization (Algorithm)}
+\textit{Required for Symmetric Matrices ($A=A^T$).}
+\textbf{Theorem (Spectral Theorem):} If $A$ is symmetric, then $A$ is orthogonally diagonalizable ($A = PDP^T$ with $P$ orthogonal).
+\textbf{Step-by-Step Process:}
+\begin{enumerate}
+    \item \textbf{Find Eigenvalues:} Solve $\det(A - \lambda I) = 0$.
+    \item \textbf{Find Eigenspaces:} For each $\lambda$, find the basis for $\text{Nul}(A - \lambda I)$.
+    \item \textbf{Gram-Schmidt Process:} If an eigenvalue has multiplicity $k > 1$, the basis vectors $v_1, \dots, v_k$ might not be orthogonal. Orthogonalize them:
+    \begin{align*}
+        u_1 &= v_1 \\
+        u_2 &= v_2 - \text{proj}_{u_1}v_2 = v_2 - \frac{v_2 \cdot u_1}{u_1 \cdot u_1}u_1
+    \end{align*}
+    \item \textbf{Normalize:} Convert all $u_i$ to unit vectors: $e_i = \frac{u_i}{||u_i||}$.
+    \item \textbf{Construct P and D:}
+    $D = \text{diag}(\lambda_1, \dots, \lambda_n)$
+    $P = [e_1 \dots e_n]$ (Columns are orthonormal eigenvectors).
+    Check: $P^T P = I$.
+\end{enumerate}
+
+\subsection{Singular Value Decomposition (SVD)}
+Let $A$ be an $m \times n$ matrix with rank $r$. Then there exists an $m \times n$ factorization:
+$$ A = U \Sigma V^T $$
+\begin{itemize}
+    \item $U$: $m \times m$ orthogonal matrix (Left Singular Vectors).
+    \item $\Sigma$: $m \times n$ diagonal matrix with singular values $\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_r > 0$.
+    \item $V$: $n \times n$ orthogonal matrix (Right Singular Vectors).
+\end{itemize}
+\textbf{Simple Example:} Find SVD of $A = \begin{pmatrix} 1 & 1 \\ 2 & 2 \end{pmatrix}$.
+\begin{enumerate}
+    \item \textbf{Compute $A^T A$:} $\begin{pmatrix} 1 & 2 \\ 1 & 2 \end{pmatrix} \begin{pmatrix} 1 & 1 \\ 2 & 2 \end{pmatrix} = \begin{pmatrix} 5 & 5 \\ 5 & 5 \end{pmatrix}$.
+    \item \textbf{Eigenvalues of $A^T A$:} $\det(A^T A - \lambda I) = \lambda^2 - 10\lambda$. $\lambda_1 = 10, \lambda_2 = 0$.
+    \item \textbf{Singular Values:} $\sigma_1 = \sqrt{10}, \sigma_2 = 0$. $\Sigma = \begin{pmatrix} \sqrt{10} & 0 \\ 0 & 0 \end{pmatrix}$.
+    \item \textbf{V (Eigenvectors of $A^T A$):}
+    $\lambda=10$: $\text{Nul}\begin{pmatrix} -5 & 5 \\ 5 & -5 \end{pmatrix} \implies v_1 = \frac{1}{\sqrt{2}}\begin{pmatrix} 1 \\ 1 \end{pmatrix}$.
+    $\lambda=0$: $\text{Nul}\begin{pmatrix} 5 & 5 \\ 5 & 5 \end{pmatrix} \implies v_2 = \frac{1}{\sqrt{2}}\begin{pmatrix} 1 \\ -1 \end{pmatrix}$.
+    \item \textbf{U (Vectors in $\mathbb{R}^m$):}
+    $u_1 = \frac{1}{\sigma_1} A v_1 = \frac{1}{\sqrt{10}} \begin{pmatrix} 1 & 1 \\ 2 & 2 \end{pmatrix} \frac{1}{\sqrt{2}}\begin{pmatrix} 1 \\ 1 \end{pmatrix} = \frac{1}{\sqrt{20}}\begin{pmatrix} 2 \\ 4 \end{pmatrix} = \frac{1}{\sqrt{5}}\begin{pmatrix} 1 \\ 2 \end{pmatrix}$.
+    $u_2$ must be unit, orthogonal to $u_1$. $u_2 = \frac{1}{\sqrt{5}}\begin{pmatrix} -2 \\ 1 \end{pmatrix}$.
+\end{enumerate}
+
+% =================================================================
+% SECTION: PROBABILITY
+% =================================================================
+\section{Probability (Foundations \& Theorems)}
+
+\subsection{Limit Theorems (Exact Formulation)}
+
+% Weak Law of Large Numbers
+\noindent\textbf{Theorem 2.126 (Weak \colorbox{pink!30}{Law of Large Numbers})} \textit{Let $X_1, X_2, \dots, X_n$ be a random sample of size $n$ all with the same finite mean $\mu$ and variance $\sigma^2$. If $\overline{X} = \frac{X_1+X_2+\dots+X_n}{n}$, then for any constant $c > 0$,}
+\[
+\boxed{ \lim_{n\to\infty} P(|\overline{X} - \mu| \ge c) = 0. }
+\]
+
+% Central Limit Theorem
+\noindent\textbf{Theorem 2.122 (\colorbox{pink!30}{Central} Limit Theorem)} \textit{Let $X_1, X_2, \dots$ be a sequence of independent rvs all having the same distributions, $E(X_1) = \mu$, and $Var(X_1) = \sigma^2$. Then for any $a, b \in \mathbb{R}$,}
+\[
+\boxed{ \lim_{n\to\infty} P\left( a \le \frac{X_1 + \dots + X_n - n\mu}{\sigma\sqrt{n}} \le b \right) = P(a \le Z \le b) }
+\]
+\textit{where $Z \sim N(0, 1)$.}
+
+\subsection{Axioms \& Set Theory}
+\textbf{De Morgan's Laws:} $(A \cup B)^c = A^c \cap B^c$. $(A \cap B)^c = A^c \cup B^c$.
+\textbf{Inclusion-Exclusion:} $P(A \cup B) = P(A) + P(B) - P(A \cap B)$.
+\textbf{Partition Rule:} If $B_1, \dots, B_n$ partition the sample space $S$:
+$$ P(A) = \sum_{i=1}^n P(A \cap B_i) = \sum_{i=1}^n P(A|B_i)P(B_i) $$
+
+\subsection{Conditional Probability \& Bayes}
+\textbf{Bayes' Theorem:} 
+$$ P(B|A) = \frac{P(A|B)P(B)}{P(A)} $$
+Used for updating beliefs (e.g., Mock Ex 5 "Coin Problem").
+\textit{Independence:} Events $A, B$ are independent iff $P(A \cap B) = P(A)P(B)$.
+
+\subsection{Moment Generating Functions (MGF)}
+\textbf{Definition:} $M_X(t) = E[e^{tX}]$.
+\textbf{Properties:}
+\begin{itemize}
+    \item $M_X(0) = 1$.
+    \item \textbf{Moments:} The $n$-th derivative at $t=0$ gives the $n$-th moment:
+    $$ M_X^{(n)}(0) = E[X^n] $$
+    \item \textbf{Sum of Indep. RVs:} If $Y = X_1 + \dots + X_n$, then $M_Y(t) = \prod M_{X_i}(t)$.
+    \item \textbf{Uniqueness:} If two RVs have the same MGF, they have the same distribution.
+\end{itemize}
+
+\subsection{Fundamental Functions (PMF, PDF, CDF)}
+\textbf{PMF (Discrete):} Probability Mass Function, $p_X(x) = P(X=x)$.
+\begin{itemize}
+    \item $\sum_{\text{all } x} p_X(x) = 1$ and $0 \le p_X(x) \le 1$.
+\end{itemize}
+
+\textbf{PDF (Continuous):} Probability Density Function, $f_X(x)$.
+\begin{itemize}
+    \item $P(a \le X \le b) = \int_a^b f_X(x) \, dx$.
+    \item $\int_{-\infty}^{\infty} f_X(x) \, dx = 1$ and $f_X(x) \ge 0$.
+    \item \textit{Note:} $f_X(x)$ is NOT a probability (can be $>1$).
+\end{itemize}
+
+\textbf{CDF (Cumulative):} Cumulative Distribution Function, $F_X(x) = P(X \le x)$.
+\begin{itemize}
+    \item Properties: Non-decreasing, $\lim_{x\to-\infty} F(x) = 0$, $\lim_{x\to\infty} F(x) = 1$.
+    \item Relation to PDF: $f_X(x) = \frac{d}{dx}F_X(x)$ (by FTC).
+\end{itemize}
+
+\section{Distributions (Discrete \& Continuous)}
+\subsection{Discrete Random Variables}
+\textbf{Bernoulli($p$):}
+\begin{itemize}
+    \item PMF: $P(X=1)=p, P(X=0)=1-p$.
+    \item Mean: $p$. Var: $p(1-p)$.
+\end{itemize}
+
+\textbf{Binomial($n, p$):} (Sum of $n$ i.i.d. Bernoullis)
+\begin{itemize}
+    \item PMF: $P(X=k) = \binom{n}{k} p^k (1-p)^{n-k}$.
+    \item Mean: $np$. Var: $np(1-p)$.
+\end{itemize}
+
+\textbf{Geometric($p$):} (Trials until first success)
+\begin{itemize}
+    \item PMF: $P(X=k) = (1-p)^{k-1}p$.
+    \item Mean: $1/p$. Var: $(1-p)/p^2$.
+\end{itemize}
+
+\textbf{Poisson($\lambda$):} (Rate of events)
+\begin{itemize}
+    \item PMF: $P(X=k) = e^{-\lambda} \frac{\lambda^k}{k!}$ for $k=0, 1, \dots$
+    \item Mean: $\lambda$. Var: $\lambda$.
+    \item MGF: $e^{\lambda(e^t - 1)}$.
+\end{itemize}
+
+\subsection{Continuous Random Variables}
+\textbf{Uniform($a, b$):}
+\begin{itemize}
+    \item PDF: $f(x) = \frac{1}{b-a}$ for $x \in [a, b]$.
+    \item Mean: $\frac{a+b}{2}$. Var: $\frac{(b-a)^2}{12}$.
+\end{itemize}
+
+\textbf{Exponential($\lambda$):} (Waiting time)
+\begin{itemize}
+    \item PDF: $f(x) = \lambda e^{-\lambda x}$ for $x \ge 0$.
+    \item CDF: $F(x) = 1 - e^{-\lambda x}$.
+    \item Mean: $1/\lambda$. Var: $1/\lambda^2$.
+    \item \textbf{Memoryless Property:} $P(X > s+t | X > s) = P(X > t)$.
+\end{itemize}
+
+\textbf{Normal($\mu, \sigma^2$):}
+\begin{itemize}
+    \item PDF: $f(x) = \frac{1}{\sqrt{2\pi}\sigma} e^{-\frac{(x-\mu)^2}{2\sigma^2}}$.
+    \item Standard Normal $Z \sim N(0,1)$. Transformation: $Z = \frac{X-\mu}{\sigma}$.
+    \item MGF: $e^{\mu t + \frac{1}{2}\sigma^2 t^2}$.
+\end{itemize}
+
+\subsection{Joint Distributions \& Covariance}
+\textbf{Joint PDF:} $P((X,Y) \in A) = \iint_A f(x,y) dx dy$.
+\textbf{Marginal PDF:} $f_X(x) = \int_{-\infty}^{\infty} f(x,y) dy$.
+\textbf{Covariance:}
+$$ Cov(X,Y) = E[(X-\mu_X)(Y-\mu_Y)] = E[XY] - E[X]E[Y] $$
+\textbf{Correlation:} $\rho_{XY} = \frac{Cov(X,Y)}{\sigma_X \sigma_Y}$.
+\textbf{Variance of Sum:}
+$$ Var(X+Y) = Var(X) + Var(Y) + 2Cov(X,Y) $$
+If $X, Y$ are independent, $Cov(X,Y)=0$ and $\rho=0$.
+
+
+\end{multicols*}
+\end{document}
