@@ -1,0 +1,153 @@
+\documentclass[10pt, a4paper]{article}
+\usepackage[margin=0.5in]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{multicol}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{xcolor}
+
+% Compact formatting
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+\pagestyle{empty}
+
+% Section styling
+\titleformat{\section}{\large\bfseries\uppercase}{}{0em}{}[\hrule]
+\titleformat{\subsection}{\bfseries\color{blue}}{}{0em}{}
+
+% Environment definitions
+\newtheorem*{theorem}{Theorem}
+\newtheorem*{lemma}{Lemma}
+\newtheorem*{definition}{Definition}
+
+\begin{document}
+
+\begin{center}
+    {\Huge \textbf{Minimum Spanning Tree (MST) Cheat Sheet}}
+\end{center}
+
+\begin{multicols*}{2}
+
+\section{Problem Definition}
+Given a connected, undirected, weighted graph $G = (V, E)$ with weight function $w: E \rightarrow \mathbb{R}$.
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Goal:} Find a spanning tree $T \subseteq E$ connecting all $|V|$ vertices such that the total weight $w(T) = \sum_{(u,v) \in T} w(u,v)$ is minimized.
+    \item \textbf{Note:} If edge weights are distinct, the MST is unique.
+\end{itemize}
+
+\section{Generic MST Method}
+An iterative approach to finding an MST.
+\begin{itemize}[leftmargin=*]
+    \item Maintain a subset of edges $A \subseteq E$.
+    \item \textbf{Invariant:} $A$ is a \textbf{safe} subset (i.e., $A$ is a subset of some MST).
+    \item \textbf{Step:} Find an edge $(u, v) \in E - A$ such that $A \cup \{(u, v)\}$ is still safe.
+    \item \textbf{Loop:} Repeat until $|A| = |V| - 1$.
+\end{itemize}
+
+\section{Key Theorems \& Proofs}
+
+\subsection{Definitions}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Cut $(S, V-S)$:} A partition of vertices $V$ into two disjoint sets.
+    \item \textbf{Crosses:} An edge $(u, v)$ crosses the cut if one endpoint is in $S$ and the other in $V-S$.
+    \item \textbf{Respects:} A cut respects set $A$ if no edge in $A$ crosses the cut.
+    \item \textbf{Light Edge:} An edge crossing a cut with the minimum weight among all edges crossing that cut.
+\end{itemize}
+
+\subsection{The Cut Theorem}
+\begin{theorem}
+Let $A$ be a safe subset of $E$. Let $(S, V-S)$ be any cut that respects $A$. Let $(u, v)$ be a light edge crossing $(S, V-S)$. Then, $A \cup \{(u, v)\}$ is safe.
+\end{theorem}
+
+\textbf{Proof (Exchange Argument):}
+\begin{enumerate}[leftmargin=*]
+    \item Since $A$ is safe, there exists an MST $T$ such that $A \subseteq T$.
+    \item If $(u, v) \in T$, we are done.
+    \item If $(u, v) \notin T$, adding $(u, v)$ to $T$ creates a unique cycle.
+    \item Since $(u, v)$ crosses the cut $(S, V-S)$, there must be at least one other edge $(x, y)$ on this cycle that also crosses the cut.
+    \item Because $(u, v)$ is a light edge, $w(u, v) \le w(x, y)$.
+    \item Construct $T' = (T \setminus \{(x, y)\}) \cup \{(u, v)\}$. $T'$ is a spanning tree.
+    \item $w(T') = w(T) - w(x, y) + w(u, v) \le w(T)$.
+    \item Since $T$ is an MST, $T'$ must also be an MST. Since $A \subseteq T$ and $(x, y) \notin A$ (because the cut respects $A$), $A \cup \{(u, v)\} \subseteq T'$. Thus, $A \cup \{(u, v)\}$ is safe. \qed
+\end{enumerate}
+
+\section{Kruskal's Algorithm}
+Builds a forest that merges into a single tree. It is a greedy algorithm.
+
+\subsection{Algorithm}
+\begin{enumerate}[leftmargin=*]
+    \item Sort all edges $E$ in non-decreasing order of weight.
+    \item Initialize $A = \emptyset$. Create $|V|$ disjoint sets (one for each vertex).
+    \item Iterate through sorted edges $(u, v)$:
+    \item If $u$ and $v$ are in different sets (components):
+    \begin{itemize}
+        \item Add $(u, v)$ to $A$.
+        \item Union the sets containing $u$ and $v$.
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Correctness}
+Follows from the Cut Theorem. If $(u, v)$ connects two different trees $C_1$ and $C_2$, consider the cut $(V_{C_1}, V - V_{C_1})$. $(u, v)$ is the lightest edge crossing this cut (due to sorting), so it is safe to add.
+
+\subsection{Data Structure: Disjoint Set Union (DSU)}
+Operations: \texttt{Make-Set}, \texttt{Find-Set}, \texttt{Union}.
+Using Path Compression and Union by Rank/Size.
+
+\subsection{Time Complexity}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Sorting:} $\Theta(m \lg m)$ or $\Theta(m \lg n)$ (since $m < n^2$).
+    \item \textbf{DSU Operations:} $O(m \alpha(n))$, where $\alpha$ is the inverse Ackermann function (nearly constant).
+    \item \textbf{Total:} $\Theta(m \lg m)$ or $\Theta(m \lg n)$.
+    \item If edges are pre-sorted: $O(m \alpha(n))$ (almost linear).
+\end{itemize}
+\textit{Notation: $n = |V|, m = |E|$.}
+
+\section{Prim's Algorithm}
+Grows a single tree from a root vertex $r$. Also greedy.
+
+\subsection{Algorithm}
+\begin{enumerate}[leftmargin=*]
+    \item Initialize $S = \{r\}$ (vertices in MST), $A = \emptyset$.
+    \item Maintain a priority queue $Q$ of vertices in $V-S$, keyed by the minimum weight edge connecting them to $S$.
+    \item $key[v] = \min \{w(u, v) \mid u \in S\}$. If no edge, $\infty$.
+    \item While $Q$ is not empty:
+    \begin{itemize}
+        \item Extract min vertex $u$ from $Q$.
+        \item Add $u$ to $S$, add edge $(u.\pi, u)$ to $A$.
+        \item Update keys of neighbors $v$ of $u$: if $w(u, v) < key[v]$, update $key[v] = w(u, v)$ and set parent $\pi[v] = u$.
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Correctness}
+Maintains invariant that $A$ is a safe set forming a tree on $S$. At each step, it selects the light edge crossing cut $(S, V-S)$, which is safe by the Cut Theorem.
+
+\subsection{Time Complexity}
+Depends on Priority Queue (PQ) implementation:
+\begin{center}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{PQ Type} & \textbf{Operations} & \textbf{Total Time} \\ \hline
+Binary Heap & $O(n)$ Extract-Min & $O(m \lg n)$ \\
+ & $O(m)$ Decrease-Key & \\ \hline
+Fibonacci Heap & $O(n)$ Extract-Min & $O(m + n \lg n)$ \\
+ & $O(1)$ amortized Dec-Key & \\ \hline
+Adjacency Matrix & Array search & $O(n^2)$ \\ \hline
+\end{tabular}
+\end{center}
+\textit{Note: Binary Heap is standard. Fibonacci is theoretical optimum for dense graphs.}
+
+\section{Comparison Summary}
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{|p{0.25\linewidth}|p{0.3\linewidth}|p{0.3\linewidth}|}
+\hline
+\textbf{Feature} & \textbf{Kruskal's} & \textbf{Prim's} \\ \hline
+\textbf{Approach} & Process edges (global) & Process vertices (local/grow) \\ \hline
+\textbf{Structure} & Maintains Forest & Maintains Single Tree \\ \hline
+\textbf{Best For} & Sparse Graphs & Dense Graphs (w/ Fib Heap) \\ \hline
+\textbf{Complexity} & $O(m \lg n)$ & $O(m \lg n)$ or $O(m+n \lg n)$ \\ \hline
+\end{tabular}
+\end{center}
+
+\end{multicols*}
+\end{document}

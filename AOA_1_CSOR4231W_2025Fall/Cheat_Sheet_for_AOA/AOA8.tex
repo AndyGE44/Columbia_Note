@@ -1,0 +1,157 @@
+\documentclass[10pt, a4paper]{article}
+\usepackage[margin=0.5in]{geometry}
+\usepackage{multicol}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{booktabs}
+
+% --- Formatting Setup ---
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\textbf{All-Pairs Shortest Paths (APSP)}}
+\rhead{Analysis of Algorithms}
+\cfoot{\thepage}
+
+% Reduce spacing for cheat sheet compactness
+\titlespacing*{\section}{0pt}{2ex}{1ex}
+\titlespacing*{\subsection}{0pt}{1ex}{0.5ex}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.3em}
+
+% Custom Commands
+\newcommand{\BigO}[1]{\mathcal{O}(#1)}
+\newcommand{\ThetaO}[1]{\Theta(#1)}
+\newcommand{\dist}{\delta}
+
+% Theorem Environments
+\newtheoremstyle{compact}{}{}{\itshape}{}{\bfseries}{.}{ }{}
+\theoremstyle{compact}
+\newtheorem*{theorem}{Theorem}
+\newtheorem*{lemma}{Lemma}
+
+\begin{document}
+
+\begin{multicols*}{2}
+
+% ==========================================
+% 1. INTRODUCTION
+% ==========================================
+\section{Problem Definition}
+\textbf{Input:} Directed weighted graph $G=(V,E)$ with weight function $w: E \to \mathbb{R}$. Let $|V|=n, |E|=m$. \\
+\textbf{Output:} Shortest path weight $\dist(u,v)$ for all $u, v \in V$.
+
+\subsection{Naive Approaches}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Non-negative weights ($w \ge 0$):} Run Dijkstra $n$ times.
+    \\ \textbf{Time:} $\BigO{n(m + n \lg n)} = \BigO{nm + n^2 \lg n}$.
+    \item \textbf{General weights:} Run Bellman-Ford $n$ times.
+    \\ \textbf{Time:} $\BigO{n^2 m}$.
+\end{itemize}
+
+% ==========================================
+% 2. JOHNSON'S ALGORITHM
+% ==========================================
+\section{Johnson's Algorithm}
+\textbf{Time:} $\BigO{nm + n^2 \lg n}$ (Better for sparse graphs). \\
+\textbf{Key Idea:} \textit{Reweighting}. Transform weights $w$ to non-negative $w'$ preserving shortest paths, then run Dijkstra $n$ times.
+
+\subsection{Phase 1: Negative Cycle Detection}
+Construct $G'$ by adding source $s$ and edges $(s,v)$ with weight 0 for all $v \in V$. Run Bellman-Ford on $G'$ from $s$.
+\begin{theorem}
+$G$ has a negative cycle iff $G'$ has a negative cycle reachable from $s$.
+\end{theorem}
+\begin{proof}
+$(\Rightarrow)$ If $G$ has a negative cycle, all vertices in $G$ are reachable from $s$ (via 0-weight edges), so the cycle is reachable in $G'$. \\
+$(\Leftarrow)$ If $G'$ has a negative cycle, it cannot involve $s$ (no incoming edges to $s$). Thus, the cycle lies entirely in $G$.
+\end{proof}
+
+\subsection{Phase 2: Reweighting}
+Let $h(v) = \dist_{G'}(s, v)$. Define new weights:
+\[ w'(u,v) = w(u,v) + h(u) - h(v) \]
+
+\begin{theorem}[Non-negativity]
+For all $(u,v) \in E, w'(u,v) \ge 0$.
+\end{theorem}
+\begin{proof}
+By the triangle inequality on shortest paths in $G'$: $\dist(s,v) \le \dist(s,u) + w(u,v)$. \\
+Substitute $h$: $h(v) \le h(u) + w(u,v) \implies w(u,v) + h(u) - h(v) \ge 0$.
+\end{proof}
+
+\begin{theorem}[Path Preservation]
+Shortest paths under $w'$ are the same as under $w$. Also $\dist(u,v) = \dist'(u,v) - h(u) + h(v)$.
+\end{theorem}
+\begin{proof}
+For any path $p = \langle v_0, \dots, v_k \rangle$:
+\begin{align*}
+w'(p) &= \sum_{i=0}^{k-1} (w(v_i, v_{i+1}) + h(v_i) - h(v_{i+1})) \\
+&= \left(\sum w(v_i, v_{i+1})\right) + h(v_0) - h(v_k) \\
+&= w(p) + h(v_0) - h(v_k)
+\end{align*}
+Since $h(v_0) - h(v_k)$ is constant for fixed $u,v$, minimizing $w'(p)$ minimizes $w(p)$.
+\end{proof}
+
+% ==========================================
+% 3. MATRIX MULTIPLICATION (DP)
+% ==========================================
+\section{Matrix Multiplication DP}
+\textbf{Time:} $\BigO{n^3 \lg n}$ using repeated squaring. \\
+\textbf{State:} $d_{ij}^{(t)} =$ min weight of path $i \to j$ with $\le t$ edges.
+\textbf{Base Case:} $D^{(1)} = W$ (adjacency matrix).
+
+\subsection{Recursive Formula}
+\[ d_{ij}^{(t)} = \min_{k \in V} \{ d_{ik}^{(t-1)} + w_{kj} \} \]
+This corresponds to "funny" matrix multiplication $D^{(t)} = D^{(t-1)} \otimes W$, where $(A \otimes B)_{ij} = \min_k (a_{ik} + b_{kj})$.
+
+\begin{theorem}[Associativity]
+The operation $\otimes$ is associative.
+\end{theorem}
+\begin{proof}
+Follows from the associativity of addition and properties of min. This allows computing $D^{(n-1)}$ via repeated squaring: $D^{(2k)} = D^{(k)} \otimes D^{(k)}$.
+\end{proof}
+
+% ==========================================
+% 4. FLOYD-WARSHALL ALGORITHM
+% ==========================================
+\section{Floyd-Warshall Algorithm}
+\textbf{Time:} $\ThetaO{n^3}$. \textbf{Space:} $\ThetaO{n^2}$. \\
+\textbf{State:} $c_{ij}^{(k)} =$ shortest path weight $i \to j$ using only intermediate vertices from $\{1, \dots, k\}$.
+
+\subsection{Recursive Formula}
+\[ c_{ij}^{(k)} = \min \left( c_{ij}^{(k-1)}, \; c_{ik}^{(k-1)} + c_{kj}^{(k-1)} \right) \]
+\textbf{Goal:} Compute $c_{ij}^{(n)}$. \textbf{Base Case:} $c_{ij}^{(0)} = w_{ij}$.
+
+\begin{theorem}[Correctness]
+$c_{ij}^{(k)}$ correctly stores the shortest path using intermediates $\{1, \dots, k\}$.
+\end{theorem}
+\begin{proof}
+Let $p$ be the shortest path $i \to j$ using intermediates $\{1, \dots, k\}$.
+\begin{enumerate}
+    \item \textbf{Case 1 ($k \notin p$):} All intermediates are in $\{1, \dots, k-1\}$. The weight is $c_{ij}^{(k-1)}$.
+    \item \textbf{Case 2 ($k \in p$):} Since no negative cycles, $p$ is simple; $k$ appears once. Split $p$ into $i \leadsto k$ and $k \leadsto j$. Both subpaths use intermediates only from $\{1, \dots, k-1\}$. Weight is $c_{ik}^{(k-1)} + c_{kj}^{(k-1)}$.
+\end{enumerate}
+The recurrence takes the minimum of these two cases.
+\end{proof}
+
+% ==========================================
+% 5. COMPARISON TABLE
+% ==========================================
+\section{Summary}
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Algorithm} & \textbf{Complexity} & \textbf{Use Case} \\
+\hline
+Iterated Dijkstra & $\BigO{nm + n^2 \lg n}$ & Sparse, $w \ge 0$ \\
+Iterated BF & $\BigO{n^2 m}$ & Sparse, $w < 0$ \\
+Johnson's & $\BigO{nm + n^2 \lg n}$ & Sparse, general \\
+Matrix Mult. & $\BigO{n^3 \lg n}$ & Dense, $w \in \mathbb{R}$ \\
+Floyd-Warshall & $\ThetaO{n^3}$ & Dense, $w \in \mathbb{R}$ \\
+\hline
+\end{tabular}
+\end{center}
+
+\end{multicols*}
+\end{document}

@@ -1,0 +1,189 @@
+\documentclass[10pt, a4paper]{article}
+\usepackage[landscape, margin=0.5in]{geometry}
+\usepackage{multicol}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\usepackage{graphicx}
+
+% Compact formatting
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\setlist[itemize]{leftmargin=*, noitemsep, topsep=0pt}
+\setlist[enumerate]{leftmargin=*, noitemsep, topsep=0pt}
+
+% Section styling
+\titleformat{\section}{\large\bfseries\color{blue}}{}{0em}{}[\hrule]
+\titleformat{\subsection}{\bfseries\color{teal}}{}{0em}{}
+
+% Theorem environments
+\newtheoremstyle{compact}{0pt}{0pt}{\small}{}{\bfseries}{.}{ }{\thmnote{#3}}
+\theoremstyle{compact}
+\newtheorem*{theorem}{Theorem}
+\newtheorem*{lemma}{Lemma}
+\newtheorem*{definition}{Definition}
+
+\begin{document}
+
+\begin{center}
+    {\Large \textbf{Maximum Flow \& Min-Cut Cheat Sheet}} \\
+    Analysis of Algorithms I
+\end{center}
+
+\begin{multicols}{3}
+
+% ---------------------------------------------------------
+\section{1. Fundamentals}
+% ---------------------------------------------------------
+
+\subsection{Flow Network}
+A directed graph $G=(V,E)$ with source $s$, sink $t$, and capacities $c(u,v) > 0$.
+\begin{itemize}
+    \item \textbf{Assumption:} $G$ is flow conservation reduced (no antiparallel edges). If $(u,v)$ and $(v,u)$ exist, split one by adding node $w$: $(u,v) \to (u,w), (w,v)$.
+\end{itemize}
+
+\subsection{Flow Definition}
+A flow $f: E \to \mathbb{R}_{\ge 0}$ satisfies:
+\begin{enumerate}
+    \item \textbf{Capacity Constraint:} 
+    $$0 \le f(u,v) \le c(u,v) \quad \forall (u,v) \in E$$
+    \item \textbf{Flow Conservation:} 
+    $$\sum_{v} f(u,v) = \sum_{v} f(v,u) \quad \forall u \in V \setminus \{s,t\}$$
+    (In-flow = Out-flow for internal nodes).
+\end{enumerate}
+
+\subsection{Value of Flow $|f|$}
+The net flow leaving the source (or entering the sink):
+$$|f| = \sum_{v} f(s,v) - \sum_{v} f(v,s)$$
+\textit{Note:} Net out-flow of $s$ equals net in-flow of $t$.
+
+% ---------------------------------------------------------
+\section{2. Cuts \& Duality}
+% ---------------------------------------------------------
+
+\subsection{s-t Cut}
+An \textbf{s-t cut} is a partition $(S, T)$ of $V$ such that $s \in S$ and $t \in T$.
+\begin{itemize}
+    \item \textbf{Capacity of Cut:} 
+    $$c(S,T) = \sum_{u \in S, v \in T} c(u,v)$$
+    (Only edges going from $S$ to $T$ count).
+\end{itemize}
+
+\subsection{Weak Duality (Lemma)}
+For any flow $f$ and any s-t cut $(S,T)$:
+$$|f| \le c(S,T)$$
+\textbf{Proof:}
+$$|f| = \sum_{u \in S} \left( \sum_{v} f(u,v) - \sum_{v} f(v,u) \right)$$
+Due to conservation, terms between nodes inside $S$ cancel out. We are left with edges crossing the cut:
+$$|f| = \sum_{\substack{u \in S \\ v \in T}} f(u,v) - \sum_{\substack{u \in T \\ v \in S}} f(v,u)$$
+Since $f(u,v) \le c(u,v)$ and $f(v,u) \ge 0$:
+$$|f| \le \sum_{u \in S, v \in T} c(u,v) = c(S,T) \qed$$
+
+\section{3. The Residual Graph}
+
+Given a flow $f$, the \textbf{residual graph} $G_f = (V, E_f)$ indicates available capacity for changing flow.
+
+\subsection{Edges in $G_f$}
+\begin{enumerate}
+    \item \textbf{Forward Edges:} If $(u,v) \in E$ and $f(u,v) < c(u,v)$, add $(u,v)$ to $E_f$ with capacity:
+    $$c_f(u,v) = c(u,v) - f(u,v)$$
+    \item \textbf{Reverse Edges:} If $(u,v) \in E$ and $f(u,v) > 0$, add $(v,u)$ to $E_f$ with capacity:
+    $$c_f(v,u) = f(u,v)$$
+\end{enumerate}
+\textit{Intuition:} Reverse edges allow "undoing" flow.
+
+\subsection{Augmenting Path}
+A simple path $P$ from $s$ to $t$ in $G_f$.
+\begin{itemize}
+    \item \textbf{Bottleneck Capacity:} $b = \min_{(u,v) \in P} c_f(u,v)$.
+    \item \textbf{Augmentation:} Increase flow on forward edges by $b$, decrease flow on reverse edges by $b$.
+    \item New flow value: $|f'| = |f| + b$.
+\end{itemize}
+
+% ---------------------------------------------------------
+\section{4. Max-Flow Min-Cut Theorem}
+% ---------------------------------------------------------
+
+\begin{theorem}[Max-Flow Min-Cut]
+The maximum flow value equals the minimum cut capacity:
+$$\max_f |f| = \min_{(S,T)} c(S,T)$$
+Furthermore, $f$ is a max flow iff there is no augmenting path in $G_f$.
+\end{theorem}
+
+\textbf{Proof (Constructive):}
+\begin{enumerate}
+    \item By Weak Duality, max flow $\le$ min cut. We need to show equality implies max flow.
+    \item Assume there is \textbf{no augmenting path} in $G_f$.
+    \item Let $S = \{v \in V \mid \exists \text{ path } s \to v \text{ in } G_f\}$ and $T = V \setminus S$.
+    \item Since no path $s \to t$ exists, $t \in T$. Thus $(S,T)$ is a valid cut.
+    \item Consider edges $(u,v) \in E$ crossing the cut:
+    \begin{itemize}
+        \item If $u \in S, v \in T$: It must be saturated ($f(u,v) = c(u,v)$). If not, residual edge $(u,v)$ exists, implying $v \in S$. Contradiction.
+        \item If $u \in T, v \in S$: It must be empty ($f(u,v) = 0$). If not, residual reverse edge $(v,u)$ exists, implying $u \in S$. Contradiction.
+    \end{itemize}
+    \item Calculate flow value across this specific cut:
+    $$|f| = \sum_{S \to T} f(u,v) - \sum_{T \to S} f(u,v)$$
+    $$|f| = \sum_{S \to T} c(u,v) - 0 = c(S,T)$$
+    \item Since $|f|$ achieved the cut capacity, it is maximal. \qed
+\end{enumerate}
+
+% ---------------------------------------------------------
+\section{5. Algorithms}
+% ---------------------------------------------------------
+
+\subsection{Ford-Fulkerson Method}
+\textbf{Strategy:} Repeatedly find any augmenting path in $G_f$ and augment flow.
+
+\begin{itemize}
+    \item \textbf{Initialization:} $f(u,v) = 0$ for all edges.
+    \item \textbf{Termination:} Stops when no path $s \to t$ in $G_f$.
+    \item \textbf{Integrity:} If capacities are integers, flow increases by at least 1 each step.
+\end{itemize}
+
+\textbf{Time Complexity:}
+$$O(m \cdot |f^*|)$$
+where $m = |E|$ and $|f^*|$ is the max flow value.
+\begin{itemize}
+    \item BFS/DFS takes $O(m)$.
+    \item At most $|f^*|$ augmentations (assuming integer capacities).
+    \item \textbf{Drawback:} If capacities are large integers, can be very slow (see pseudo-polynomial time).
+\end{itemize}
+
+\subsection{Edmonds-Karp Algorithm}
+A specific implementation of Ford-Fulkerson.
+
+\textbf{Strategy:} Find the augmenting path using \textbf{BFS} (Shortest path in terms of number of edges).
+
+\textbf{Time Complexity:}
+$$O(n \cdot m^2)$$
+where $n = |V|, m = |E|$.
+\begin{itemize}
+    \item \textbf{Monotonicity:} The shortest path distance from $s$ to any node $\delta(s,v)$ in $G_f$ never decreases.
+    \item \textbf{Total Augmentations:} At most $O(nm)$.
+    \item Strongly polynomial (independent of capacity values).
+\end{itemize}
+
+% ---------------------------------------------------------
+\section{6. Summary of Complexities}
+% ---------------------------------------------------------
+
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Algorithm} & \textbf{Time Complexity} \\ \hline
+Ford-Fulkerson & $O(m |f^*|)$ \\ \hline
+Edmonds-Karp & $O(nm^2)$ \\ \hline
+\end{tabular}
+\end{center}
+
+\vspace{0.2cm}
+\textbf{Key Concepts:}
+\begin{itemize}
+    \item \textbf{Residual Graph:} Maps "potential" for change.
+    \item \textbf{Bottleneck:} Limits flow increase on a path.
+    \item \textbf{Min-Cut:} The structural limit of the network.
+\end{itemize}
+
+\end{multicols}
+\end{document}

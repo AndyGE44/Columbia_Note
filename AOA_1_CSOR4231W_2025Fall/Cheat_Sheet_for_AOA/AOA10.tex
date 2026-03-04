@@ -1,0 +1,134 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[landscape, margin=0.4in]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{multicol}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{xcolor}
+
+% Compact formatting
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\setlist[itemize]{leftmargin=*, noitemsep, topsep=0pt}
+\setlist[enumerate]{leftmargin=*, noitemsep, topsep=0pt}
+\titleformat{\section}{\large\bfseries\color{blue}}{}{0em}{}[\hrule]
+\titleformat{\subsection}{\bfseries\color{teal}}{}{0em}{}
+
+% Theorem environments
+\newtheorem*{theorem}{Theorem}
+\newtheorem*{lemma}{Lemma}
+\newtheorem*{definition}{Definition}
+
+\begin{document}
+
+\begin{center}
+    {\Large \textbf{Algorithms Cheat Sheet: Edmonds-Karp \& Bipartite Matching}}
+\end{center}
+
+\begin{multicols}{3}
+
+% ---------------------------------------------------------
+% SECTION 1: EDMONDS-KARP
+% ---------------------------------------------------------
+\section{Edmonds-Karp Algorithm}
+\textbf{Goal:} Maximize flow in network $G=(V,E)$. \\
+\textbf{Method:} Implementation of Ford-Fulkerson.
+\begin{itemize}
+    \item Uses \textbf{BFS} to find the \textbf{shortest augmenting path} (fewest edges) in residual graph $G_f$ at each step.
+\end{itemize}
+
+\subsection{Time Complexity}
+\begin{itemize}
+    \item \textbf{BFS per Iteration:} $O(m)$ (assuming $m \ge n-1$).
+    \item \textbf{Total Iterations:} $O(nm)$.
+    \item \textbf{Total Time:} $O(nm^2)$.
+\end{itemize}
+
+% ---------------------------------------------------------
+% SECTION 2: COMPLEXITY PROOF
+% ---------------------------------------------------------
+\section{EK Complexity Proofs}
+
+\subsection{Lemma 1: Monotonicity}
+For every vertex $v \in V$, the shortest-path distance $\delta_f(s, v)$ in $G_f$ \textbf{increases monotonically} with each flow augmentation.
+\begin{proof}[\textbf{Concise Proof}]
+Assume for contradiction that $\delta_{f'}(s, v) < \delta_f(s, v)$ after augmenting along path $p$. Let $v$ be the vertex with minimum $\delta_{f'}(s, v)$ satisfying this.
+Let $u$ be $v$'s predecessor in shortest path in $G_{f'}$. Thus $\delta_{f'}(s, v) = \delta_{f'}(s, u) + 1$.
+Since $u$ is closer to $s$, its distance did not decrease: $\delta_{f'}(s, u) \ge \delta_f(s, u)$.
+\textbf{Case 1:} $(u,v) \in G_f$. Then $\delta_f(s, v) \le \delta_f(s, u) + 1 \le \delta_{f'}(s, u) + 1 = \delta_{f'}(s, v)$, contradiction.
+\textbf{Case 2:} $(u,v) \notin G_f$. Edge $(u,v)$ appeared only because flow was pushed on $(v,u)$. Thus $(v,u)$ is on path $p$, so $\delta_f(s, u) = \delta_f(s, v) + 1$.
+Combining gives: $\delta_{f'}(s, v) = \delta_{f'}(s, u) + 1 \ge \delta_f(s, u) + 1 = \delta_f(s, v) + 2$, contradiction.
+\end{proof}
+
+\subsection{Lemma 2: Iteration Bound}
+The total number of flow augmentations is $O(nm)$.
+\begin{proof}[\textbf{Concise Proof}]
+An edge $(u,v)$ on augmenting path $p$ is \textbf{critical} if it limits the flow (capacity becomes 0).
+\begin{itemize}
+    \item A critical edge disappears from $G_f$.
+    \item To reappear, flow must be pushed on $(v,u)$, requiring $\delta(s, u) = \delta(s, v) + 1$.
+    \item When critical: $\delta(s, v) = \delta(s, u) + 1$.
+    \item When reappearing: $\delta'(s, u) = \delta'(s, v) + 1 \ge \delta(s, v) + 1 = \delta(s, u) + 2$.
+\end{itemize}
+Distance to $u$ increases by $\ge 2$ between times $(u,v)$ is critical. Max distance is $n$. So $(u,v)$ is critical $\le n/2$ times.
+Total edges $2m$. Max iterations $2m \cdot (n/2) = nm$.
+\end{proof}
+
+% ---------------------------------------------------------
+% SECTION 3: EXTENSIONS
+% ---------------------------------------------------------
+\section{Max Flow Extensions}
+\textbf{Integrality Theorem:} If all capacities are integers, there exists a max flow where all flows are integers. Ford-Fulkerson finds such a flow.
+
+\subsection{Standard Reductions}
+\textbf{Antiparallel Edges:} If $(u,v), (v,u) \in E$:
+\begin{itemize}
+    \item Add dummy vertex $w$.
+    \item Replace $(u,v)$ with $(u,w)$ and $(w,v)$ with same capacity.
+\end{itemize}
+\textbf{Multiple Sources/Sinks:} $\{s_1 \dots s_k\}, \{t_1 \dots t_l\}$
+\begin{itemize}
+    \item Add super-source $S$, super-sink $T$.
+    \item Add edges $(S, s_i)$ and $(t_i, T)$ with capacity $\infty$.
+\end{itemize}
+
+% ---------------------------------------------------------
+% SECTION 4: BIPARTITE MATCHING
+% ---------------------------------------------------------
+\section{Max Bipartite Matching}
+\textbf{Input:} Bipartite graph $G=(L \cup R, E)$.
+\textbf{Goal:} Find matching $M \subseteq E$ with max cardinality.
+
+\subsection{Reduction to Max Flow}
+Construct $G' = (V', E')$:
+\begin{enumerate}
+    \item $V' = L \cup R \cup \{s, t\}$.
+    \item Direct all edges from $L \to R$.
+    \item Add edges $s \to u$ for all $u \in L$.
+    \item Add edges $v \to t$ for all $v \in R$.
+    \item \textbf{Capacities:} Set all capacities to $1$.
+\end{enumerate}
+
+\subsection{Theorems}
+\begin{lemma}[Flow-Matching]
+If $M$ is a matching in $G$, there is an integer flow $f$ in $G'$ with $|f|=|M|$. Conversely, if $f$ is integer flow, there is matching $M$ with $|M|=|f|$.
+\end{lemma}
+\begin{proof}
+Let $M = \{ (u,v) \mid f(u,v) > 0 \}$. Conservation of flow + unit capacities ensures no vertex shares an edge in $M$.
+\end{proof}
+
+\begin{theorem}
+Max Matching Size in $G$ = Max Flow Value in $G'$.
+\end{theorem}
+
+\subsection{Complexity}
+Using Ford-Fulkerson on $G'$:
+\begin{itemize}
+    \item $|E'| = |E| + |V| = \Theta(m)$.
+    \item Max flow value $|f^*| \le |V| = n$ (since source has only $n$ outgoing edges of cap 1).
+    \item FF Runtime: $O(m \cdot |f^*|) = O(mn)$.
+\end{itemize}
+\textbf{Result:} Max Bipartite Matching runs in $\mathbf{O(nm)}$.
+
+\end{multicols}
+\end{document}

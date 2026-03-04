@@ -1,0 +1,156 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[margin=0.5in]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\usepackage{multicol}
+\usepackage{fancyhdr}
+\usepackage{tcolorbox}
+
+% --- Style Setup ---
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\textbf{Analysis of Algorithms I: DFS}}
+\lhead{\textsc{Cheat Sheet}}
+\cfoot{\thepage}
+
+\setlength{\columnsep}{0.5cm}
+\titleformat{\section}{\large\bfseries\color{blue!70!black}}{}{0em}{}[\hrule]
+\titleformat{\subsection}{\bfseries\color{black}}{}{0em}{}
+
+\begin{document}
+
+\begin{center}
+    {\Huge \textbf{DFS, Topological Sort \& Proofs}}
+\end{center}
+
+\begin{multicols*}{2}
+
+% ---------------------------------------------------------
+% SECTION: DFS ALGORITHM
+% ---------------------------------------------------------
+\section{DFS Algorithm}
+\subsection*{1. DFS Wrapper}
+\begin{itemize}[leftmargin=*]
+    \item Input: Graph $G=(V, E)$.
+    \item Init: All $v.color \leftarrow \textbf{White}$, $\pi \leftarrow \text{nil}$, $time \leftarrow 0$.
+    \item Loop: For $u \in V$, if $u$ is \textbf{White}, call \texttt{DFS-Visit(G, u)} [cite: 82-84].
+\end{itemize}
+
+\subsection*{2. DFS-Visit(G, u)}
+\begin{enumerate}[leftmargin=*, label=\arabic*.]
+    \item $time \leftarrow time + 1$; $u.d \leftarrow time$ (Discovery)[cite: 98].
+    \item $u.color \leftarrow \textbf{Gray}$ (Active)[cite: 100].
+    \item For each $v \in adj(u)$:
+    \begin{itemize}
+        \item If $v.color == \textbf{White}$:
+        \item $v.\pi \leftarrow u$; \texttt{DFS-Visit(G, v)} [cite: 107-108].
+    \end{itemize}
+    \item $u.color \leftarrow \textbf{Black}$ (Finished)[cite: 109].
+    \item $time \leftarrow time + 1$; $u.f \leftarrow time$ (Finish)[cite: 110].
+\end{enumerate}
+
+% ---------------------------------------------------------
+% SECTION: TIME COMPLEXITY
+% ---------------------------------------------------------
+\begin{tcolorbox}[colback=yellow!10!white, colframe=red!75!black, title=\textbf{TIME COMPLEXITY}]
+    \begin{center}
+        \Large \boldmath $\Theta(n + m)$
+    \end{center}
+    \begin{itemize}[leftmargin=*]
+        \item \textbf{Visits:} \texttt{DFS-Visit} called once per vertex $\Theta(n)$[cite: 122].
+        \item \textbf{Edges:} Loop runs $\sum |adj(u)| = \Theta(m)$[cite: 126].
+    \end{itemize}
+\end{tcolorbox}
+
+% ---------------------------------------------------------
+% SECTION: KEY THEOREMS
+% ---------------------------------------------------------
+\section{Key Theorems}
+
+\subsection*{1. Parenthesis Lemma}
+Intervals $[u.d, u.f]$ and $[v.d, v.f]$ are either disjoint or one contains the other[cite: 151].
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Ancestor:} If $u$ is ancestor of $v$, $[v.d, v.f] \subset [u.d, u.f]$.
+    \item \textbf{Unrelated:} Intervals are disjoint ($u.f < v.d$ or $v.f < u.d$).
+\end{itemize}
+
+\subsection*{2. White-Path Theorem}
+Vertex $v$ is a descendant of $u$ \textbf{iff} at time $u.d$, there is a white path from $u$ to $v$[cite: 141].
+
+% ---------------------------------------------------------
+% SECTION: PROOFS
+% ---------------------------------------------------------
+\section{Theorem Proofs}
+
+\subsection*{Proof: Parenthesis Lemma}
+Derived from the recursive structure (LIFO stack) .
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Case 1 ($u$ is ancestor of $v$):}
+    \begin{itemize}
+        \item $u$ is discovered ($u.d$).
+        \item \texttt{DFS-Visit(u)} calls \texttt{DFS-Visit(v)} (possibly indirectly) before returning[cite: 108].
+        \item $v$ must be discovered ($v.d$) and finished ($v.f$) \textit{inside} the recursive call of $u$.
+        \item $u$ finishes ($u.f$) only after $v$ returns.
+        \item Result: $u.d < v.d < v.f < u.f$.
+    \end{itemize}
+    \item \textbf{Case 2 ($u, v$ unrelated):}
+    \begin{itemize}
+        \item Without loss of generality, assume $u.d < v.d$.
+        \item If $u$ did not finish before $v$ started, $u$ would be active (Gray) when $v$ was discovered, making $u$ an ancestor (contradiction).
+        \item Thus, $u$ must finish ($u.f$) before $v$ starts ($v.d$).
+        \item Result: $u.d < u.f < v.d < v.f$ (Disjoint).
+    \end{itemize}
+\end{itemize}
+
+\subsection*{Proof: White-Path Theorem}
+\textbf{Direction ($\Rightarrow$):} If $v$ is descendant $\to$ White Path.
+\begin{itemize}[leftmargin=*]
+    \item Let $v$ be proper descendant. By Parenthesis Lemma, $u.d < v.d$[cite: 165].
+    \item At time $u.d$, $v$ has not been discovered, so $v$ is \textbf{White}.
+    \item Applies to all nodes on the tree path $u \to v$[cite: 163].
+\end{itemize}
+
+\textbf{Direction ($\Leftarrow$):} White Path $\to$ $v$ is descendant.
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Contradiction:} Assume white path $P$ exists at $u.d$, but $v$ is \textbf{not} a descendant[cite: 170].
+    \item Let $w$ be the last descendant of $u$ on path $P$. Let $v$ be the next node (not a descendant) [cite: 171-173].
+    \item By Parenthesis Lemma: $w.f \le u.f$[cite: 180].
+    \item Since $v$ is white at $u.d$, it is discovered after $u$. Since edge $(w,v)$ exists, $v$ is discovered before $w$ finishes:
+    $$ u.d < v.d < v.f < w.f \le u.f $$
+    \item Interval containment implies $v$ is a descendant. \textbf{Contradiction} [cite: 183-184].
+\end{itemize}
+
+% ---------------------------------------------------------
+% SECTION: EDGE CLASSIFICATION
+% ---------------------------------------------------------
+\section{Edge Classification}
+Determined by color of $v$ when $(u,v)$ is explored[cite: 220].
+
+\begin{center}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Type} & \textbf{Color of $v$} & \textbf{Timestamp Property} \\
+\hline
+Tree & White & $u.d < v.d < v.f < u.f$ \\
+Back & Gray & $v.d < u.d < u.f < v.f$ \\
+Forward & Black & $u.d < v.d < v.f < u.f$ \\
+Cross & Black & $v.f < u.d$ \\
+\hline
+\end{tabular}
+\end{center}
+\small{\textit{Back edges imply a cycle[cite: 232].}}
+
+% ---------------------------------------------------------
+% SECTION: TOPOLOGICAL SORT
+% ---------------------------------------------------------
+\section{Topological Sort}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Algo:} Run DFS. Upon finishing vertex $u$, insert to \textbf{front} of list[cite: 196].
+    \item \textbf{Result:} $v_1.f > v_2.f > \dots > v_n.f$[cite: 198].
+    \item \textbf{Logic:} For any edge $(u,v)$ in DAG, $u.f > v.f$[cite: 204].
+\end{itemize}
+
+\end{multicols*}
+\end{document}

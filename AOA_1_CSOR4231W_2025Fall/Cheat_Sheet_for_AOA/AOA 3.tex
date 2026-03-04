@@ -1,0 +1,186 @@
+\documentclass[10pt, a4paper, landscape]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath, amssymb}
+\usepackage{multicol}
+\usepackage[margin=1cm]{geometry}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+% Compact list settings
+\setlist{nosep}
+\setlist[itemize]{leftmargin=*}
+
+% Compact section titles
+\titleformat{\section}{\large\bfseries\uppercase}{\thesection}{1em}{}
+\titlespacing*{\section}{0pt}{5pt}{2pt}
+\titleformat{\subsection}{\bfseries}{\thesubsection}{1em}{}
+\titlespacing*{\subsection}{0pt}{3pt}{1pt}
+
+% Custom commands
+\newcommand{\bigO}{\mathcal{O}}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Analysis of Algorithms: Graphs \& BFS}
+\rhead{Cheat Sheet}
+\cfoot{\thepage}
+
+\begin{document}
+
+\begin{multicols*}{3}
+
+% ---------------------------------------------------------
+\section{1. Graph Definitions}
+% ---------------------------------------------------------
+A graph $G=(V, E)$ consists of vertices $V$ and edges $E$.
+Let $n = |V|$ and $m = |E|$.
+
+\subsection*{Undirected Graphs}
+\begin{itemize}
+    \item Edges are unordered pairs $\{u, v\}$.
+    \item $(u, v)$ is the same as $(v, u)$.
+    \item \textbf{Handshaking Lemma:} $\sum_{v \in V} \text{deg}(v) = 2m$.
+    \item \textbf{Density:} Simple graphs have $m \le n(n-1)/2$.
+    \item Sparse if $m \ll n^2$; Dense if $m \approx n^2$.
+\end{itemize}
+
+\subsection*{Directed Graphs}
+\begin{itemize}
+    \item Edges are ordered pairs $(u, v)$ (from $u$ to $v$).
+    \item In-degree: edges entering $v$. Out-degree: edges leaving $v$.
+    \item $\sum \text{in-deg}(v) = \sum \text{out-deg}(v) = m$.
+\end{itemize}
+
+% ---------------------------------------------------------
+\section{2. Representations}
+% ---------------------------------------------------------
+Comparing Space and Time complexity for $G=(V, E)$.
+
+\subsection*{A. Adjacency Matrix}
+$n \times n$ matrix $A$ where $A_{ij} = 1$ if $(i, j) \in E$, else $0$.
+\begin{itemize}
+    \item \textbf{Space:} $\Theta(n^2)$.
+    \item \textbf{Check edge $(u, v)$:} $\bigO(1)$.
+    \item \textbf{Iterate neighbors of $u$:} $\Theta(n)$.
+    \item Symmetric for undirected graphs.
+\end{itemize}
+
+\subsection*{B. Adjacency List}
+Array of $n$ lists. $Adj[u]$ contains all neighbors of $u$.
+\begin{itemize}
+    \item \textbf{Space:} $\Theta(n + m)$.
+        \begin{itemize}
+            \item Undirected: $2m$ nodes in lists.
+            \item Directed: $m$ nodes in lists.
+        \end{itemize}
+    \item \textbf{Check edge $(u, v)$:} $\bigO(\text{deg}(u))$.
+    \item \textbf{Iterate neighbors of $u$:} $\Theta(\text{deg}(u))$.
+    \item \textbf{Best for:} Sparse graphs.
+\end{itemize}
+
+% ---------------------------------------------------------
+\section{3. Breadth-First Search (BFS)}
+% ---------------------------------------------------------
+\textbf{Goal:} Explore reachable vertices from source $s$ and compute shortest path distances $\delta(s, v)$.
+
+\subsection*{Attributes}
+\begin{itemize}
+    \item \texttt{color}: \textbf{White} (unvisited), \textbf{Black} (visited/in queue).
+    \item \texttt{d}: Distance from $s$.
+    \item \texttt{Q}: FIFO Queue.
+\end{itemize}
+
+\subsection*{Algorithm}
+\begin{algorithmic}[1]
+\STATE Init: $\forall u \ne s$, $u.color \leftarrow White, u.d \leftarrow \infty$
+\STATE $s.color \leftarrow Black, s.d \leftarrow 0$
+\STATE Enqueue($Q, s$)
+\WHILE{$Q \ne \emptyset$}
+    \STATE $u \leftarrow$ Dequeue($Q$)
+    \FORALL{$v \in Adj[u]$}
+        \IF{$v.color == White$}
+            \STATE $v.color \leftarrow Black$
+            \STATE $v.d \leftarrow u.d + 1$
+            \STATE Enqueue($Q, v$)
+        \ENDIF
+    \ENDFOR
+\ENDWHILE
+\end{algorithmic}
+
+\subsection*{Analysis}
+\begin{itemize}
+    \item \textbf{Time Complexity:} $\bigO(n + m)$ (using Adj List).
+        \begin{itemize}
+            \item Initialization: $\bigO(n)$.
+            \item Each vertex enqueued/dequeued at most once.
+            \item Scanning $Adj[u]$ takes $\bigO(\text{deg}(u))$.
+            \item Total scan time: $\sum \text{deg}(u) = \bigO(m)$.
+        \end{itemize}
+    \item \textbf{Space Complexity:} $\bigO(n)$ (Queue + attributes).
+\end{itemize}
+
+% ---------------------------------------------------------
+\section{4. Key Properties}
+% ---------------------------------------------------------
+
+\subsection*{Shortest Path Correctness}
+BFS computes the shortest path distance $\delta(s, v)$ for unweighted graphs (unit weights).
+\begin{itemize}
+    \item Upon termination: $v.d = \delta(s, v)$ for all reachable $v$.
+    \item \textbf{Invariant:} Queue contains vertices with distance $k$ followed by $k+1$.
+    \item \textbf{Lemma:} If $(u, v) \in E$, then $\delta(s, v) \le \delta(s, u) + 1$.
+\end{itemize}
+
+\subsection*{BFS Tree}
+We can store predecessor pointers $v.\pi$.
+\begin{itemize}
+    \item Set $v.\pi = u$ when $u$ discovers $v$.
+    \item Constructing the tree takes $\bigO(n+m)$.
+\end{itemize}
+
+\subsection*{Generic Search}
+\begin{itemize}
+    \item Maintain set $R$ of visited vertices.
+    \item While $\exists$ edge $(u, v)$ from $R$ to $V-R$, add $v$ to $R$.
+    \item BFS is a specific strategy: pick $u$ that was added to $R$ \textbf{earliest} (FIFO).
+\end{itemize}
+
+% ---------------------------------------------------------
+\section{5. Applications}
+% ---------------------------------------------------------
+
+\subsection*{Connected Components}
+Find all vertices reachable from every node.
+\begin{algorithmic}[1]
+\STATE Init all vertices White
+\FORALL{$s \in V$}
+    \IF{$s.color == White$}
+        \STATE BFS($G, s$)
+        \STATE Output vertices visited in this call as a component.
+    \ENDIF
+\ENDFOR
+\end{algorithmic}
+\begin{itemize}
+    \item \textbf{Total Time:} $\bigO(n + m)$.
+    \item Note: BFS($G, s$) only visits $s$'s component. Sum of work over all calls is linear in total size of graph.
+\end{itemize}
+
+% ---------------------------------------------------------
+\section{6. Exam Quick Tips}
+% ---------------------------------------------------------
+\begin{itemize}
+    \item \textbf{Matrix vs List:} Use List for traversal (BFS/DFS), Matrix for dense graphs or fast edge lookup.
+    \item \textbf{BFS Queue:} Always FIFO.
+    \item \textbf{Distances:} BFS guarantees minimal number of edges.
+    \item \textbf{Reachability:} $v$ is reachable from $s$ iff $v.color == Black$ (or $v.d < \infty$).
+    \item \textbf{Undirected Reachability:} Set of reachable vertices = Connected Component.
+    \item \textbf{Directed Reachability:} Path exists from $s$ to $v$.
+\end{itemize}
+
+\end{multicols*}
+\end{document}

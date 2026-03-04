@@ -1,0 +1,146 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[margin=0.5in]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\usepackage{multicol}
+
+% Custom formatting for cheat sheet
+\titleformat{\section}{\large\bfseries\color{blue}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\bfseries\color{darkgray}}{}{0em}{}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.5em}
+
+% Environments for theorems/lemmas
+\newtheorem*{lemma}{Lemma}
+\newtheorem*{theorem}{Theorem}
+\newtheorem*{definition}{Definition}
+
+\begin{document}
+
+\begin{center}
+    {\Huge \textbf{Strongly Connected Components (SCC)}} \\
+    {\large Analysis of Algorithms Cheat Sheet}
+\end{center}
+
+\begin{multicols}{2}
+
+\section{Definitions \& Basics}
+
+\subsection{Strongly Connected Component (SCC)}
+Given a directed graph $G=(V,E)$, a subset $C \subseteq V$ is an \textbf{SCC} if it is a \textbf{maximal} set of vertices such that every pair $u, v \in C$ is mutually reachable (path $u \to v$ and $path v \to u$).
+\begin{itemize}
+    \item \textbf{Maximal:} For any $u \in C$ and $w \notin C$, $u$ and $w$ are \textit{not} mutually reachable.
+    \item Partition Property: Every graph $G$ can be partitioned into disjoint SCCs $C_1, \dots, C_k$.
+\end{itemize}
+
+\subsection{Reverse Graph ($G^T$)}
+Given $G=(V,E)$, the reverse graph is $G^T = (V, E^T)$ where $E^T = \{(v,u) : (u,v) \in E\}$.
+\begin{itemize}
+    \item $u$ reachable from $v$ in $G \iff v$ reachable from $u$ in $G^T$.
+    \item Construction takes $O(n+m)$ (linear time).
+\end{itemize}
+
+\section{The Component Graph ($G_{SCC}$)}
+
+The component graph $G_{SCC}$ collapses each SCC into a single vertex.
+\begin{itemize}
+    \item \textbf{Vertices:} $\{C_1, \dots, C_k\}$ (the SCCs of $G$).
+    \item \textbf{Edges:} Edge $(C_i, C_j)$ exists if $\exists$ edge $u \to v$ in $G$ where $u \in C_i, v \in C_j$.
+\end{itemize}
+
+\begin{lemma}[DAG Property]
+The component graph $G_{SCC}$ is a Directed Acyclic Graph (DAG).
+\end{lemma}
+\textbf{Proof:} Assume a cycle $C_1 \to C_2 \to \dots \to C_1$ exists. This implies all vertices in $\bigcup C_i$ are mutually reachable. They could be merged into a single larger SCC, contradicting the maximality of the individual $C_i$'s.
+
+\subsection{Source \& Sink SCCs}
+\begin{itemize}
+    \item \textbf{Sink SCC:} An SCC with no outgoing edges to other SCCs in $G_{SCC}$.
+    \item \textbf{Source SCC:} An SCC with no incoming edges from other SCCs in $G_{SCC}$.
+\end{itemize}
+
+\section{Structural Lemmas}
+
+\begin{lemma}[Separation Lemma]
+If there is an edge $C \to C'$ in $G$, there is no edge $C' \to C$.
+\end{lemma}
+\textbf{Proof:} If edges existed in both directions, $C$ and $C'$ would form a cycle in $G_{SCC}$, violating the DAG property. Vertices in $C \cup C'$ would be mutually reachable.
+
+\begin{lemma}[Key Sink Lemma]
+Let $C$ be a sink SCC of $G$. If $u \in C$, then the set of vertices reachable from $u$ in $G$ is exactly $C$.
+\end{lemma}
+\textbf{Proof:}
+Let $R$ be the set reachable from $u$.
+1. By definition of SCC, $C \subseteq R$.
+2. Since $C$ is a sink, no edges leave $C$. Thus, a path starting in $C$ cannot leave $C$.
+3. Therefore $v \notin C \implies v$ not reachable. $R \subseteq C$.
+Conclusion: $R = C$.
+
+\section{Linear-Time Algorithm (Kosaraju)}
+
+\subsection{Concept}
+Instead of running $O(n)$ DFS calls (Naive $O(n(n+m))$), we find an ordering that allows us to extract SCCs one by one in $O(n+m)$.
+
+We need a vertex in a \textbf{sink SCC} to apply the Key Sink Lemma.
+\begin{itemize}
+    \item $C$ is a sink SCC of $G \iff C$ is a source SCC of $G^T$.
+    \item We find a source SCC of $G^T$ using finish times.
+\end{itemize}
+
+\subsection{Finish Times Lemma}
+Let $f(C) = \max_{u \in C} \{u.f\}$ (max finish time in DFS).
+\begin{lemma}[Finish Time Order]
+Let $C, C'$ be SCCs of $G^T$. If there is an edge $C \to C'$ in $G^T$, then $f(C) > f(C')$.
+\end{lemma}
+\textbf{Proof:} Consider DFS on $G^T$:
+\textbf{Case 1:} DFS visits $C$ before $C'$.
+There is a path $C \to C'$. By White-Path Theorem, all nodes in $C'$ are descendants of the first discovered node in $C$. Thus, nodes in $C'$ finish before the root of $C$.
+\textbf{Case 2:} DFS visits $C'$ before $C$.
+Since $G_{SCC}$ is a DAG, no path exists from $C'$ back to $C$. DFS finishes exploring $C'$ completely before discovering $C$. Thus $f(C') < u.d$ (discovery of $C$) $< f(C)$.
+
+\subsection{The Algorithm}
+\begin{algorithm}[H]
+\caption{Find SCCs in Linear Time}
+\begin{algorithmic}[1]
+\STATE Construct $G^T$ (adjacency list).
+\STATE Run \textbf{DFS($G^T$)} and record finish times $u.f$ for all $u$.
+\STATE Create a list $S$ of vertices sorted by decreasing $u.f$.
+\WHILE{$S$ is not empty}
+    \STATE Let $u$ be the first vertex in $S$.
+    \STATE Run \textbf{DFS-Visit($G, u$)} to find set $R$ (vertices reachable from $u$ in $G$).
+    \STATE Output $R$ as an SCC.
+    \STATE Remove $R$ from $G$ and $S$.
+\ENDWHILE
+\end{algorithmic}
+\end{algorithm}
+
+\section{Complexity Analysis}
+
+\textbf{Total Time:} \fbox{\Large $O(n + m)$}
+
+\subsection{Breakdown}
+\begin{enumerate}
+    \item \textbf{Construct $G^T$:} Iterate over adjacency list of $G$. $O(n+m)$.
+    \item \textbf{First DFS ($G^T$):} Standard DFS traversal. $O(n+m)$.
+    \item \textbf{Ordering $S$:} Can be done during DFS (like topological sort) by prepending to a list on finish. $O(n)$.
+    \item \textbf{Second DFS Loop ($G$):}
+    Although called multiple times, \textbf{DFS-Visit} is called on unvisited nodes only.
+    Each vertex and edge is explored exactly once across all calls in the while-loop.
+    Essentially equivalent to a single DFS on $G$ with a specific start order.
+    Time: $O(n+m)$.
+\end{enumerate}
+
+\subsection{Why it works}
+\begin{itemize}
+    \item The vertex $u$ with the largest finish time in $DFS(G^T)$ belongs to a source SCC of $G^T$, which is a \textbf{sink SCC of $G$}.
+    \item DFS-Visit($G, u$) extracts exactly this sink SCC (Lemma 3).
+    \item After removal, the next highest finish time in $S$ belongs to a sink SCC of the \textit{remaining} graph.
+\end{itemize}
+
+\end{multicols}
+\end{document}

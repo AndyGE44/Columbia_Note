@@ -1,0 +1,155 @@
+\documentclass[10pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath, amssymb}
+\usepackage{multicol}
+\usepackage[margin=0.4in]{geometry}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+
+% Compact list settings
+\setlist{nosep}
+
+% Compact section titles
+\titleformat{\section}{\large\bfseries}{\thesection}{1em}{}
+\titlespacing*{\section}{0pt}{5pt}{2pt}
+\titleformat{\subsection}{\bfseries}{\thesubsection}{1em}{}
+\titlespacing*{\subsection}{0pt}{3pt}{1pt}
+
+% Custom commands for math
+\newcommand{\amortized}{\hat{c}_i}
+\newcommand{\actual}{c_i}
+\newcommand{\potential}{\Phi}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Analysis of Algorithms: Amortized Analysis}
+\rhead{Cheat Sheet}
+\cfoot{\thepage}
+
+\begin{document}
+
+\begin{multicols*}{2}
+
+% ---------------------------------------------------------
+\section{1. Core Concepts}
+% ---------------------------------------------------------
+Amortized analysis guarantees the average performance of each operation in the worst case sequence of $n$ operations.
+
+\subsection*{A. Aggregate Analysis}
+Computes the total cost $T(n)$ for a sequence of $n$ operations directly.
+\begin{itemize}
+    \item \textbf{Amortized Cost:} $T(n) / n$.
+    \item If total cost is $O(n)$, amortized cost is $O(1)$.
+\end{itemize}
+
+\subsection*{B. Accounting Method (The Banker's View)}
+Assign an \textbf{amortized cost} ($\amortized$) to each operation.
+\begin{itemize}
+    \item If $\amortized > \actual$ (actual cost): Surplus stored as ``credit'' in the data structure.
+    \item If $\amortized < \actual$: Use stored credit to pay for the operation.
+    \item \textbf{Condition:} Total Credit $\ge 0$ at all times.
+    \item \textbf{Conclusion:} $\sum_{i=1}^n \amortized \ge \sum_{i=1}^n \actual$.
+\end{itemize}
+
+\subsection*{C. Potential Method (The Physicist's View)}
+Define a potential function $\potential(S)$ mapping the data structure state $S$ to a real number.
+\begin{itemize}
+    \item \textbf{Formula:} $d_i = \actual + \potential(S_i) - \potential(S_{i-1})$
+    \item Where $d_i$ is amortized cost, $\actual$ is actual cost.
+    \item \textbf{Condition:} $\potential(S_n) \ge \potential(S_0)$ (usually $\potential(S_0) = 0$ and $\potential(S_i) \ge 0$).
+    \item \textbf{Conclusion:} $\sum d_i$ is an upper bound on $\sum \actual$.
+\end{itemize}
+
+% ---------------------------------------------------------
+\section{2. Multipop Stack}
+% ---------------------------------------------------------
+\textbf{Operations:} Push, Pop, Multipop($S, k$).\\
+\textbf{Naive Analysis:} Worst case per op is $O(n)$, total $O(n^2)$.\\
+\textbf{Amortized Result:} Total cost $\le 2n$, Amortized $O(1)$.
+
+\subsection*{Aggregate Proof}
+Each object pushed once can be popped at most once.
+\[ \text{Total Pops} \le \text{Total Pushes} \le n \]
+\[ \text{Total Cost} \le n (\text{Push}) + n (\text{Pop}) = 2n \]
+
+\subsection*{Accounting Scheme (Pricing)}
+\begin{itemize}
+    \item \textbf{Push:} Charge \textbf{\$2}. (\$1 for actual push, \$1 saved for future pop).
+    \item \textbf{Pop / Multipop:} Charge \textbf{\$0}. (Pay using the saved \$1).
+    \item \textbf{Invariant:} Bank Balance = Number of items in stack $\ge 0$.
+\end{itemize}
+
+% ---------------------------------------------------------
+\section{3. Dynamic Stack (Doubling)}
+% ---------------------------------------------------------
+\textbf{Strategy:} Start size 1. If $S.num == S.size$, allocate new array of size $2 \cdot S.size$, copy elements, then push.
+
+\subsection*{Complexity}
+\begin{itemize}
+    \item \textbf{Naive:} $O(n^2)$ (pessimistic).
+    \item \textbf{Actual Total:} $< 3n$.
+    \item \textbf{Amortized:} $O(1)$ per operation.
+\end{itemize}
+
+\subsection*{Aggregate Calculation}
+Expensive expansion happens only when $i-1$ is a power of 2.
+\[ \sum_{i=1}^n c_i = n + \sum_{j=0}^{\lg n} 2^j < 3n \]
+
+\subsection*{Potential Function (Crucial)}
+\[ \boldsymbol{\potential(S) = 2 \cdot S.num - S.size} \]
+\begin{itemize}
+    \item \textbf{Property:} $\potential(S_i) \ge 0$ always (since table is at least $1/2$ full).
+    \item \textbf{Derivation ($d_i = 3$):}
+    \begin{itemize}
+        \item \textit{No Expansion:} $d_i = 1 + (2(k+1)-sz) - (2k-sz) = 3$.
+        \item \textit{Expansion ($sz \to 2sz$):} $c_i = k+1$. \\
+        $d_i = (k+1) + (2(k+1)-2sz) - (2k-sz) = 3$.
+        \\ (Note: at overflow $k=sz$).
+    \end{itemize}
+\end{itemize}
+
+% ---------------------------------------------------------
+\section{4. Dynamic Stack (Contraction)}
+% ---------------------------------------------------------
+To support Pop operations while maintaining $O(1)$ amortized cost and $O(n)$ space.
+
+\subsection*{Rules}
+\begin{itemize}
+    \item \textbf{Expansion:} Double size when Full ($num = size$).
+    \item \textbf{Contraction:} Halve size when \textbf{1/4 Full} ($num = size/4$).
+    \item \textbf{Note:} Do NOT shrink at 1/2 full. This causes ``thrashing'' (oscillation) leading to $O(n^2)$ complexity.
+\end{itemize}
+\subsection*{Result}
+\begin{itemize}
+    \item \textbf{Load Factor:} Always between $1/4$ and $1$.
+    \item \textbf{Amortized Cost:} $O(1)$ constant time.
+\end{itemize}
+
+% ---------------------------------------------------------
+\section{5. Summary Table}
+% ---------------------------------------------------------
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{@{}p{0.2\textwidth} p{0.12\textwidth} p{0.14\textwidth}@{}}
+\toprule
+\textbf{Problem} & \textbf{Amortized} & \textbf{Key Formula} \\
+\midrule
+Multipop Stack & $O(1)$ & Push Charge $= 2$ \\
+Dynamic Stack & $O(1)$ & $\Phi = 2 \cdot num - size$ \\
+Binary Counter & $O(1)$ & Flip $0 \to 1$ Charge $= 2$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{6. Exam Tips}
+\begin{itemize}
+    \item \textbf{Designing $\Phi$:} Ensure $\Phi(0) = 0$ and $\Phi(i) \ge 0$.
+    \item \textbf{Designing Costs:} Overcharge cheap operations (Push) to pay for expensive ones (Resize/Multipop).
+    \item \textbf{Common Mistake:} Confusing \textit{Worst-Case per operation} (which can be high, e.g., $O(n)$) with \textit{Amortized Cost} (which is average $O(1)$).
+\end{itemize}
+
+\end{multicols*}
+\end{document}

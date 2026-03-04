@@ -1,0 +1,162 @@
+\documentclass[10pt, a4paper, landscape]{article}
+\usepackage[margin=0.5in]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{multicol}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{titlesec}
+\usepackage{enumitem}
+
+% Compact spacing
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{2pt}
+\titlespacing*{\section}{0pt}{2pt}{2pt}
+\titlespacing*{\subsection}{0pt}{2pt}{1pt}
+
+% Theorem environments
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem*{proof_sketch}{Proof Sketch}
+
+\begin{document}
+
+\begin{center}
+    {\Large \textbf{Analysis of Algorithms I: Single-Source Shortest Paths Cheat Sheet}} \\
+    Based on Lecture Notes by Xi Chen, Columbia University
+\end{center}
+
+\begin{multicols}{3}
+
+% SECTION: DEFINITIONS
+\section*{1. Definitions \& Notation}
+\textbf{Input:} Weighted directed graph $G=(V, E)$ with source $s \in V$.
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Weight function:} $w: E \to \mathbb{R}$.
+    \item \textbf{Path weight:} For $p = \langle v_0, \dots, v_k \rangle$, $w(p) = \sum_{i=1}^k w(v_{i-1}, v_i)$.
+    \item \textbf{Shortest-path weight:} $\delta(u, v) = \min \{ w(p) : u \leadsto v \}$. If unreachable, $\delta(u, v) = \infty$.
+\end{itemize}
+
+\textbf{Problem:} Compute $\delta(s, v)$ and shortest path tree for all $v \in V$.
+
+% SECTION: PROPERTIES
+\section*{2. Key Properties}
+\subsection*{Triangle Inequality}
+For any edge $(u, v) \in E$:
+$$ \delta(s, v) \le \delta(s, u) + w(u, v) $$
+\emph{Proof:} The shortest path from $s$ to $u$ followed by edge $(u, v)$ is a valid path to $v$ with weight $\delta(s, u) + w(u, v)$. The shortest path $\delta(s, v)$ cannot be heavier than this specific path.
+
+\subsection*{Optimal Substructure}
+If $p = \langle v_0, \dots, v_k \rangle$ is a shortest path, then any subpath $p_{i,j} = \langle v_i, \dots, v_j \rangle$ is a shortest path from $v_i$ to $v_j$.
+
+% SECTION: DIJKSTRA
+\section*{3. Dijkstra's Algorithm}
+\textbf{Constraint:} Edge weights must be \textbf{non-negative} ($w(u,v) \ge 0$).
+
+\textbf{Algorithm:}
+\begin{algorithmic}[1]
+\State $S \gets \{s\}$, $s.d \gets 0$, $v.d \gets \infty$ for $v \neq s$
+\State $Q \gets V$ (Priority Queue by $d$)
+\While{$Q \neq \emptyset$}
+    \State $u \gets \text{Extract-Min}(Q)$
+    \State $S \gets S \cup \{u\}$
+    \For{$v \in Adj[u]$}
+        \If{$v.d > u.d + w(u,v)$}
+            \State $v.d \gets u.d + w(u,v)$ \Comment{Relax}
+            \State $v.\pi \gets u$
+            \State $\text{Decrease-Key}(Q, v)$
+        \EndIf
+    \EndFor
+\EndWhile
+\end{algorithmic}
+
+\textbf{Time Complexity:}
+\begin{itemize}[leftmargin=*]
+    \item Binary Heap: $O(m \log n)$
+    \item Fibonacci Heap: $O(m + n \log n)$
+\end{itemize}
+(where $n=|V|, m=|E|$)
+
+\subsection*{Correctness}
+\textbf{Key Lemma:} Let $S$ be the set of visited vertices. If $v \in V-S$ has the minimum distance estimate among all vertices in $V-S$, then $v.d = \delta(s, v)$.
+
+\begin{proof_sketch}
+Suppose for contradiction $v.d > \delta(s, v)$. Let $p$ be a true shortest path from $s$ to $v$. Let $y$ be the first vertex on $p$ such that $y \in V-S$.
+\begin{enumerate}[leftmargin=*]
+    \item Since $y$ is the first outside $S$, the subpath to $y$'s predecessor is entirely in $S$. Thus $y.d$ was correctly updated: $y.d = \delta(s, y)$.
+    \item Since weights are non-negative: $\delta(s, y) \le \delta(s, v)$.
+    \item Because $v$ was chosen as minimum in $V-S$: $v.d \le y.d = \delta(s, y)$.
+    \item Combined: $v.d \le \delta(s, y) \le \delta(s, v)$.
+    \item Contradiction (since assumed $v.d > \delta(s, v)$).
+\end{enumerate}
+\end{proof_sketch}
+
+% SECTION: BELLMAN-FORD
+\section*{4. Bellman-Ford Algorithm}
+\textbf{Constraint:} Handles \textbf{negative weights}. Detects negative cycles.
+
+\textbf{Algorithm:}
+\begin{algorithmic}[1]
+\State Init $s.d=0$, others $\infty$
+\For{$i = 1$ to $n-1$}
+    \For{each edge $(u, v) \in E$}
+        \If{$v.d > u.d + w(u, v)$}
+            \State $v.d \gets u.d + w(u, v)$
+        \EndIf
+    \EndFor
+\EndFor
+\For{each edge $(u, v) \in E$}
+    \If{$v.d > u.d + w(u, v)$}
+        \Return "Negative Cycle"
+    \EndIf
+\EndFor
+\Return "No reachable negative cycle"
+\end{algorithmic}
+
+\textbf{Time Complexity:} $\Theta(nm) = \Theta(VE)$.
+
+\subsection*{Correctness (No Negative Cycle)}
+\textbf{Theorem:} If $G$ has no negative cycles, $v.d = \delta(s, v)$ after $n-1$ passes.
+\begin{proof_sketch}
+Induction on $k$, the number of edges in the shortest path.
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Base:} After 0 iterations, $s.d=0$ is correct.
+    \item \textbf{Step:} Assume vertices with shortest paths of $k-1$ edges are correct. In iteration $k$, we relax edge $(u, v)$ where $u$ is the predecessor of $v$ on the shortest path. By optimal substructure, $u.d$ is correct, so $v.d$ becomes correct via relaxation.
+    \item Max simple path length is $n-1$.
+\end{itemize}
+\end{proof_sketch}
+
+\subsection*{Correctness (Negative Cycle)}
+\textbf{Theorem:} Returns "Negative Cycle" iff a reachable negative cycle exists.
+\begin{proof_sketch}
+Suppose cycle $c = \langle v_0, v_1, \dots, v_k, v_0 \rangle$ exists and algorithm fails to detect it (meaning triangle inequality holds for all edges).
+\begin{align*}
+    v_1.d &\le v_0.d + w(v_0, v_1) \\
+    v_2.d &\le v_1.d + w(v_1, v_2) \\
+    &\dots \\
+    v_0.d &\le v_k.d + w(v_k, v_0)
+\end{align*}
+Summing these gives: $\sum v_i.d \le \sum v_i.d + \sum w(edge)$.
+Subtracting $\sum v_i.d$: $0 \le \sum w(edge) = w(c)$.
+This contradicts that $w(c) < 0$. Thus, inequality must fail for at least one edge.
+\end{proof_sketch}
+
+% SECTION: DAG
+\section*{5. DAG Shortest Paths}
+\textbf{Constraint:} Graph must be a Directed Acyclic Graph (DAG). Weights can be negative.
+
+\textbf{Algorithm:}
+\begin{enumerate}[leftmargin=*]
+    \item Topologically sort vertices of $G$.
+    \item Initialize distances.
+    \item Process vertices $u$ in topological order:
+    \item \quad For each $v \in Adj[u]$, relax $(u, v)$.
+\end{enumerate}
+
+\textbf{Time Complexity:} $\Theta(V + E)$ (Linear).
+\begin{proof_sketch}
+Topological sort takes $\Theta(V+E)$. We process each vertex once and each edge exactly once.
+\end{proof_sketch}
+
+\end{multicols}
+
+\end{document}
